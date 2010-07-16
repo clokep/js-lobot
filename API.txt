@@ -1,2 +1,76 @@
+Please reference
+	http://mxr.mozilla.org/mozilla/source/webtools/mozbot/BotModules/devel.txt
+	for the mozbot API implementation
+
 A module package is just an array of modules
-Each module must implement
+
+Lobot implements
+	Functions that control the overall bot
+		join		Instruct the bot to join a channel / open a chat to a user
+			Parameters
+				channelName		Channel name to join
+		dump		Dump information to the console
+			Parameters
+				message
+		listChannels	Get a list of channels on the current server
+		schedule		Schedule an event to run
+			Parameters
+				fcn			Function handle
+				frequency	How often to run the event
+				number		Number of times to run the event (0 for infinity)
+		addModules		Adds an array of modules to the bot on the fly
+		
+	Functions that get passed to modules
+		startup		Occurs on app start up
+		loggedin	Occurs on successful login to server
+		joined		Joined a chat/received a chat
+		messaged	Runs on each private message send to the bot
+		told		Runs on each message said to the bot, parses and decides
+					which module to run
+			Parameters
+				account
+				time
+				channelName
+				message
+		heard		Runs on each message not said to the bot
+		noticed		Runs on each notice message (do not reply to on IRC -- RFC
+					1459)
+					Needs to set the mode if it changes, keep track of account
+					statuses, etc.
+		felt		Runs on each emoticon said to the bot
+		saw			Runs on each emoticon not said to the bot
+		invited
+		kicked
+		modeChanged	Called when the bot's mode changed
+		parted
+		loggedout	Occurs when connection to server is lost (or logged out)
+		shutdown	OCcurs on app shut down
+	Variables
+		channels, each of which has
+			Functions
+				in					Are we still in this channel?
+				banned				Were we banned from this channel?
+				rejoin				Attempt to reconnect if !in
+					Return
+						true	In channel or successfully rejoined
+						false	Otherwise
+			Variables
+				outgoingMessages	Array of outgoing messages to be sent in order
+				incomingMessages	Array of incoming messages to be parsed (note a
+									multiline message will be broken into multiple
+									incomingMessages)
+				loggedMessages		Essentially the full chat history, includes
+									incoming and outgoing messages from all users
+				accounts			Other people in this channel
+				mode				Returns the mode
+		modules				Array of all modules
+
+Each module is an object which can implement the functions above, anything not
+implemented is skipped. All modules share the same variable space and should
+store data as part of the Lobot instance directly (or in an external datastore,
+i.e. a database, if necessary).
+	Functions
+		Those above
+		requires	List of modules required by this module
+	
+Include jQuery? Prototype?
