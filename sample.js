@@ -1,59 +1,61 @@
-function Lobot(username, modules) {
+/**
+ * Contains the source code of the Lobot class. 
+ * @file sample.js
+ */
+
+/**
+ * Luasóg
+ * @project Lobot
+ * @description A JavaScript bot for Instantbird.
+ * @author Patrick Cloke
+ * @version 0.1
+ * @timestamp
+ */
+function Lobot(modulePacks) {
 	this.modules = [];
-	this.username = username;
+	this.modulePacks = [{name: "core", version: 0.1}];
+	this.addModules(modulePacks);
 };
 Lobot.prototype = {
+	/**
+	 *
+	 */
 	addModules: function(modulePacks) {
 		// Load each module into the list
-		for each (modulePack in modulePacks) {
+		modulePacks.forEach(function(modulePack) {
 			var metRequirements = true;
-			if (modulePack.requires)
-				metRequirements = false;
-				for (requirement in modulePack.requires)
-					if (!(requirement in this.modules))
-						break;
-			if (metRequirements)
-				this.modules = this.modules.concat(modulePack);
-		}
-		
-		// Check requirements and run start up
-		/*var requirementsMet = false;
-		while (!requirementsMet)
-			for (var i = 0; i < this.modules.length; i++) {
-				var module = this.modules[i];
-				if (module.requires)
-					for (requirement in module.requires)
-						if(!(requirement in this.modules)) {
-							this.modules = this.modules.splice(i,1); // Remove this element
-							break;
-						}
+			if (modulePack.meta.requires)
+				metRequirements = modulePack.meta.requires.every(function(requirement) {
+					return this.modulePacks.some(function(loadedModulePack) {
+						return (this.name.toLowerCase() == loadedModulePack.name.toLowerCase()
+								&& this.version < loadedModulePack.version);
+					}, requirement);
+				}, this);
+				
+			if (metRequirements) {
+				this.modules = this.modules.concat(modulePack.modules);
+				this.modulePacks = this.modulePacks.push(modulePack.meta);
 			}
-		for each (module in this.modules)
-			module.startup();*/
-		alert(this.modules.length);
+		}, this);
 	},
-	told: function(user, time, message) {
-		message = message.toLowerCase();
-		var words = message.split(/\b/);
-		
-		for each (module in modules) {
-			if (words[0] in module.verbs) {
-				var response = module.onMessage();
+	
+	
+	told: function(user, time, rawMessage) {
+		var words = rawMessage.split(/\W/);
+		alert(JSON.stringify(words));
 
-				return true;
-			}
-		}
+		for (var i = 0; i < modules.length; i++)
+			modules[i].told(this, user, time, channel, message, rawMessage);
 	}
 }
 
-
-// Initiate with a constructor
-var bot = new Lobot(/* Optionally an array of modules */);
-
-bot.addModules([helloWorld]);
-
 var helloWorld = {
-	[
+	meta: {
+		name: "Hello World!",
+		author: "Patrick Cloke",
+		requires: [{name: "core", version: 0}/*, {name: "fake", version: 1}*/]
+	},
+	modules: [
 		{
 			startup: function() {},
 			verbs: ["hi", "hello"],
@@ -69,3 +71,7 @@ var helloWorld = {
 		}
 	]
 };
+
+// Initiate with a constructor
+var bot = new Lobot([helloWorld]);
+bot.told("", new Date(), "This is a test!");

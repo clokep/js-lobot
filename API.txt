@@ -28,9 +28,9 @@ Lobot implements
 		told		Runs on each message said to the bot, parses and decides
 					which module to run
 			Parameters
-				account
+				user
 				time
-				channelName
+				channel
 				message
 		heard		Runs on each message not said to the bot
 		noticed		Runs on each notice message (do not reply to on IRC -- RFC
@@ -64,6 +64,7 @@ Lobot implements
 				accounts			Other people in this channel
 				mode				Returns the mode
 		modules				Array of all modules
+		modePacks			Holds meta data for all loaded module packs
 
 Each module is an object which can implement the functions above, anything not
 implemented is skipped. All modules share the same variable space and should
@@ -71,6 +72,10 @@ store data as part of the Lobot instance directly (or in an external datastore,
 i.e. a database, if necessary).
 	Functions
 		Those above
-		requires	List of modules required by this module
+
+Module Pack
+	Variables
+		requires	Array of modules required by this module
+		modules		Array of modules
 	
 Include jQuery? Prototype?
