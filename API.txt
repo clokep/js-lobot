@@ -1,0 +1,2 @@
+A module package is just an array of modules
+Each module must implement
