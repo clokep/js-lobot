@@ -14,13 +14,15 @@
 function Lobot(modulePacks) {
 	this.modules = [];
 	this.modulePacks = [{name: "core", version: 0.1}];
-	this.addModules(modulePacks);
+	this.addModulePacks(modulePacks);
+	this.startup();
 };
 Lobot.prototype = {
-	/**
-	 *
-	 */
-	addModules: function(modulePacks) {
+	dump: function(str) {
+		document.getElementById("console").innerHTML = document.getElementById("console").innerHTML + "<br>" + str;
+	},
+
+	addModulePacks: function(modulePacks) {
 		// Load each module into the list
 		modulePacks.forEach(function(modulePack) {
 			var metRequirements = true;
@@ -34,24 +36,39 @@ Lobot.prototype = {
 				
 			if (metRequirements) {
 				this.modules = this.modules.concat(modulePack.modules);
-				this.modulePacks = this.modulePacks.push(modulePack.meta);
+				this.modulePacks.push(modulePack.meta);
 			}
 		}, this);
 	},
 	
+	executeModuleFunction: function(fcn) {
+		this.modules.forEach(function(module) {
+			if (module[fcn])
+				module[fcn](this);
+		}, this);
+	},
 	
-	told: function(user, time, rawMessage) {
-		var words = rawMessage.split(/\W/);
-		alert(JSON.stringify(words));
+	startup: function() {
+		this.executeModuleFunction("startup");
+	},
+	
+	told: function(user, time, channel, rawMessage) {
+		var message = rawMessage.split(/\W/);
 
-		for (var i = 0; i < modules.length; i++)
-			modules[i].told(this, user, time, channel, message, rawMessage);
+		for (var i = 0; i < this.modules.length; i++)
+			if (this.modules[i].told)
+				this.modules[i].told(this, user, time, channel, message, rawMessage);
+	},
+	
+	shutdown: function() {
+		this.executeModuleFunction("shutdown");
 	}
 }
 
 var helloWorld = {
 	meta: {
 		name: "Hello World!",
+		version: 0.1,
 		author: "Patrick Cloke",
 		requires: [{name: "core", version: 0}/*, {name: "fake", version: 1}*/]
 	},
@@ -61,8 +78,9 @@ var helloWorld = {
 			verbs: ["hi", "hello"],
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
-			told: function() {
-				return {responseText: ["", ""]};
+			told: function(self, user, time, channel, message, rawMessage) {
+				self.dump(user + " " + time + " " + JSON.stringify(message));
+				return;
 			},
 			shutdown: function() {}
 		},
@@ -72,6 +90,39 @@ var helloWorld = {
 	]
 };
 
+var logger = {
+	meta: {
+		name: "Logger",
+		version: 0.1,
+		author: "Patrick Cloke",
+		requires: [{name: "core", version: 0}]
+	},
+	modules: [
+		{
+			startup: function(self) {
+				self.loggedMessages = [];
+				alert(": " + self.loggedMessages);
+			},
+			told: function(self, user, time, channel, message, rawMessage) {
+				self.loggedMessages.push(rawMessage);
+			},
+			heard: function(self, user, time, channel, message, rawMessage) {
+				self.loggedMessages.push(rawMessage);
+			},
+			noticed: function(self, user, time, channel, message, rawMessage) {
+				self.loggedMessages.push(rawMessage);
+			},
+			felt: function(self, user, time, channel, message, rawMessage) {
+				self.loggedMessages.push(rawMessage);
+			},
+			saw: function(self, user, time, channel, message, rawMessage) {
+				self.loggedMessages.push(rawMessage);
+			}
+		}
+	]
+};
+
 // Initiate with a constructor
-var bot = new Lobot([helloWorld]);
-bot.told("", new Date(), "This is a test!");
+var bot = new Lobot([helloWorld, logger]);
+bot.told("Test", new Date(), "#blah", "This is a test!");
+bot.told("Test", new Date(), "#blah", "Another test!");

@@ -32,6 +32,7 @@ Lobot implements
 				time
 				channel
 				message
+				rawMessage
 		heard		Runs on each message not said to the bot
 		noticed		Runs on each notice message (do not reply to on IRC -- RFC
 					1459)
@@ -59,10 +60,9 @@ Lobot implements
 				incomingMessages	Array of incoming messages to be parsed (note a
 									multiline message will be broken into multiple
 									incomingMessages)
-				loggedMessages		Essentially the full chat history, includes
-									incoming and outgoing messages from all users
 				accounts			Other people in this channel
 				mode				Returns the mode
+				name				Channel name
 		modules				Array of all modules
 		modePacks			Holds meta data for all loaded module packs
 
