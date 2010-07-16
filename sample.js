@@ -1,19 +1,6 @@
-/**
- * Contains the source code of the Lobot class. 
- * @file sample.js
- */
-
-/**
- * Luasóg
- * @project Lobot
- * @description A JavaScript bot for Instantbird.
- * @author Patrick Cloke
- * @version 0.1
- * @timestamp
- */
 function Lobot(modulePacks) {
 	this.modules = [];
-	this.modulePacks = [{name: "core", version: 0.1}];
+	this.modulePacks = [{name: "core", author: "Patrick Cloke", version: 0.1}];
 	this.addModulePacks(modulePacks);
 	this.startup();
 };
@@ -79,6 +66,11 @@ var helloWorld = {
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
 			told: function(self, user, time, channel, message, rawMessage) {
+				verbs.some(function(verb) {
+					if (verb.toLowerCase() in this.message) {
+						self.outgoingMessages.push("Hi! " + user.name);
+					}
+				}, message);
 				self.dump(user + " " + time + " " + JSON.stringify(message));
 				return;
 			},
@@ -126,3 +118,5 @@ var logger = {
 var bot = new Lobot([helloWorld, logger]);
 bot.told("Test", new Date(), "#blah", "This is a test!");
 bot.told("Test", new Date(), "#blah", "Another test!");
+
+alert(bot.loggedMessages);
