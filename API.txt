@@ -19,7 +19,7 @@ Lobot implements
 				frequency	How often to run the event
 				number		Number of times to run the event (0 for infinity)
 		addModules		Adds an array of modules to the bot on the fly
-		
+
 	Functions that get passed to modules
 		startup		Occurs on app start up
 		loggedin	Occurs on successful login to server

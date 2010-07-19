@@ -3,10 +3,16 @@ function Lobot(modulePacks) {
 	this.modulePacks = [{name: "core", author: "Patrick Cloke", version: 0.1}];
 	this.addModulePacks(modulePacks);
 	this.startup();
+	
+	this.users = [];
+	this.channels = [];
 };
 Lobot.prototype = {
+	/*
+	 * Utilities
+	 */
 	dump: function(str) {
-		document.getElementById("console").innerHTML = document.getElementById("console").innerHTML + "<br>" + str;
+		document.getElementById("console").innerHTML += str + "<br>";
 	},
 
 	addModulePacks: function(modulePacks) {
@@ -34,7 +40,7 @@ Lobot.prototype = {
 				module[fcn](this);
 		}, this);
 	},
-	
+
 	startup: function() {
 		this.executeModuleFunction("startup");
 	},
@@ -66,11 +72,12 @@ var helloWorld = {
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
 			told: function(self, user, time, channel, message, rawMessage) {
-				verbs.some(function(verb) {
-					if (verb.toLowerCase() in this.message) {
-						self.outgoingMessages.push("Hi! " + user.name);
-					}
-				}, message);
+				if (this.verbs.some(function(verb) {
+					return this.match(new RegExp("(?:^|\\W)" + verb + "(?:\\W|$)", "i"));
+				}, rawMessage)) {
+					//channel.outgoingMessages.push("Hi! " + user.name);
+					self.dump("Hi! " + user);
+				}
 				self.dump(user + " " + time + " " + JSON.stringify(message));
 				return;
 			},
@@ -93,7 +100,7 @@ var logger = {
 		{
 			startup: function(self) {
 				self.loggedMessages = [];
-				alert(": " + self.loggedMessages);
+				dump(": " + self.loggedMessages);
 			},
 			told: function(self, user, time, channel, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
@@ -116,7 +123,8 @@ var logger = {
 
 // Initiate with a constructor
 var bot = new Lobot([helloWorld, logger]);
+bot.told("Test", new Date(), "#blah", "Hello!");
 bot.told("Test", new Date(), "#blah", "This is a test!");
 bot.told("Test", new Date(), "#blah", "Another test!");
 
-alert(bot.loggedMessages);
+bot.dump("<i>Debug: " + bot.loggedMessages + "</i>");
