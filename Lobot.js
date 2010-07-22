@@ -27,18 +27,48 @@ Lobot.prototype = {
 					}, requirement);
 				}, this);
 				
-			if (metRequirements) {
-				this.modules = this.modules.concat(modulePack.modules);
-				this.modulePacks.push(modulePack.meta);
-			}
+			if (metRequirements)
+				this.modulePacks.push(modulePack);
 		}, this);
+		
+		this.modulePacks.forEach(function(modulePack) {
+			if (modulePack.modules) // Skip core
+				modulePack.modules.forEach(function(module) {
+					module.parent = modulePack;
+				});
+		});
+		/*this.modulePacks.forEach(function(modulePack, index) {
+			if (modulePack.modules) // Skip core
+				this.modulePacks[index].modules.forEach(function(module, index2) {
+					this.modulePacks[index].modules[index2].parent = this.modulePacks[index];
+					//this.dump(this.modulePacks[index].modules[index2].parent);
+				}, this);
+		}, this);*/
 	},
 	
-	executeModuleFunction: function(fcn) {
-		this.modules.forEach(function(module) {
-			if (module[fcn])
-				module[fcn](this);
-		}, this);
+	/*
+	 * Run a function for every module
+	 * Second parameter is "this" variable in function, otherwise the Lobot instance is used
+	 */
+	moduleRunner: function(fun /*, thisp*/) {
+		if (typeof fun != "function")
+			throw new TypeError();
+
+		var thisp = arguments[1] || this;
+
+		this.modulePacks.forEach(function(modulePack) {
+			if (modulePack.modules) // Skip core
+				modulePack.modules.forEach(function(module) {
+					fun.call(thisp, module);
+				});
+		});
+	},
+	
+	executeModuleFunction: function(fun) {
+		this.moduleRunner(function(module) {
+			if (module[fun])
+				module[fun](this);
+		});
 	},
 
 	startup: function() {
@@ -46,26 +76,28 @@ Lobot.prototype = {
 	},
 	
 	help: function(helpTopic) {
+		var self = this;
 		if (helpTopic)
-			this.modules.forEach(function(module) {
+			this.moduleRunner(function(module) {
 				for (topic in module.help)
 					if (topic == helpTopic)
 						this.dump("<< " + topic + ": " + module.help[topic]);
-			}, this);
+			});
 		else
-			this.modules.forEach(function(module) {
+			this.moduleRunner(function(module) {
 				for (topic in module.help)
 					this.dump("<< " + topic);
-			}, this);
+			});
 	},
 	
 	told: function(user, time, channel, rawMessage) {
 		this.dump(">> " + rawMessage);
 		var message = rawMessage.split(/\W/);
 
-		for (var i = 0; i < this.modules.length; i++)
-			if (this.modules[i].told)
-				this.modules[i].told(this, user, time, channel, message, rawMessage);
+		this.moduleRunner(function(module) {
+			if (module.told)
+				module.told(this, user, time, channel, message, rawMessage);
+		});
 	},
 	
 	shutdown: function() {
@@ -82,7 +114,6 @@ var helloWorld = {
 	},
 	modules: [
 		{
-			startup: function() {},
 			verbs: ["hi", "hello"],
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
@@ -119,7 +150,7 @@ var logger = {
 		{
 			startup: function(self) {
 				self.loggedMessages = [];
-				dump("[" + self.loggedMessages + "]");
+				self.loggedMessages.push((new Date()) + "Logger starter");
 			},
 			told: function(self, user, time, channel, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
@@ -140,11 +171,39 @@ var logger = {
 	]
 };
 
+// See http://www.infobot.org/samplesrc/0.45.3/README
+// 
+var infobot = {
+	meta: {
+		name: "Infobot",
+		version: 0.1,
+		author: "Patrick Cloke",
+		requires: [{name: "core", version: 0}]
+	},
+	modules: [
+		{
+			factoid: function factoid(name, plural) {
+				return {
+					plural: plural,
+					name: name
+				};
+			},
+			told: function(self, user, time, channel, message, rawMessage) {
+				rawMessage.replace(/\s(is|are)\s/, "=is=>");
+				var test = new this.factoid("Test", true);
+				self.dump(test.name + ": " + test.plural);
+			}
+		}
+	]
+};
+
+
 // Initiate with a constructor
-var bot = new Lobot([helloWorld, logger]);
+var bot = new Lobot([helloWorld, logger, infobot]);
 bot.told("Test", new Date(), "#blah", "Hello!");
 bot.told("Test", new Date(), "#blah", "This is a test!");
 bot.told("Test", new Date(), "#blah", "Another test!");
-bot.dump("<i>Debug: " + bot.loggedMessages + "</i>");
+bot.dump("<i>Debug: " + bot.loggedMessages.join("<br>") + "</i>");
 bot.help();
 bot.help("hi");
+bot.told("Test", new Date(), "#blah", "foo is bar");
