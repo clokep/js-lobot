@@ -14,6 +14,9 @@ Lobot.prototype = {
 	dump: function(str) {
 		document.getElementById("console").innerHTML += str + "<br>";
 	},
+	debug: function (str) {
+		this.dump("[<i>" + str + "<i>]");
+	},
 
 	addModulePacks: function(modulePacks) {
 		// Load each module into the list
@@ -171,39 +174,17 @@ var logger = {
 	]
 };
 
-// See http://www.infobot.org/samplesrc/0.45.3/README
-// 
-var infobot = {
-	meta: {
-		name: "Infobot",
-		version: 0.1,
-		author: "Patrick Cloke",
-		requires: [{name: "core", version: 0}]
-	},
-	modules: [
-		{
-			factoid: function factoid(name, plural) {
-				return {
-					plural: plural,
-					name: name
-				};
-			},
-			told: function(self, user, time, channel, message, rawMessage) {
-				rawMessage.replace(/\s(is|are)\s/, "=is=>");
-				var test = new this.factoid("Test", true);
-				self.dump(test.name + ": " + test.plural);
-			}
-		}
-	]
-};
-
-
 // Initiate with a constructor
-var bot = new Lobot([helloWorld, logger, infobot]);
+var bot = new Lobot([helloWorld, logger, infobot]);  bot.dump(new XRegExp("a b c","x").test("abc") + "<br>" + /abc/.test("abc"));
 bot.told("Test", new Date(), "#blah", "Hello!");
 bot.told("Test", new Date(), "#blah", "This is a test!");
 bot.told("Test", new Date(), "#blah", "Another test!");
-bot.dump("<i>Debug: " + bot.loggedMessages.join("<br>") + "</i>");
+bot.debug(bot.loggedMessages.join("<br>"));
 bot.help();
 bot.help("hi");
 bot.told("Test", new Date(), "#blah", "foo is bar");
+bot.told("Test", new Date(), "#blah", "geez, FOOD is BAR");
+
+
+
+
