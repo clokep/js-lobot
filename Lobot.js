@@ -45,7 +45,22 @@ Lobot.prototype = {
 		this.executeModuleFunction("startup");
 	},
 	
+	help: function(helpTopic) {
+		if (helpTopic)
+			this.modules.forEach(function(module) {
+				for (topic in module.help)
+					if (topic == helpTopic)
+						this.dump("<< " + topic + ": " + module.help[topic]);
+			}, this);
+		else
+			this.modules.forEach(function(module) {
+				for (topic in module.help)
+					this.dump("<< " + topic);
+			}, this);
+	},
+	
 	told: function(user, time, channel, rawMessage) {
+		this.dump(">> " + rawMessage);
 		var message = rawMessage.split(/\W/);
 
 		for (var i = 0; i < this.modules.length; i++)
@@ -76,12 +91,16 @@ var helloWorld = {
 					return this.match(new RegExp("(?:^|\\W)" + verb + "(?:\\W|$)", "i"));
 				}, rawMessage)) {
 					//channel.outgoingMessages.push("Hi! " + user.name);
-					self.dump("Hi! " + user);
+					self.dump("<< Hi! " + user);
 				}
-				self.dump(user + " " + time + " " + JSON.stringify(message));
+				//self.dump(user + " " + time + " " + JSON.stringify(message));
 				return;
 			},
-			shutdown: function() {}
+			shutdown: function() {},
+			help: {
+				"hi": "Testing the help system",
+				"bye": "Testing the help system again",
+			}
 		},
 		{
 			verbs: ["bye", "goodbye"],
@@ -100,7 +119,7 @@ var logger = {
 		{
 			startup: function(self) {
 				self.loggedMessages = [];
-				dump(": " + self.loggedMessages);
+				dump("[" + self.loggedMessages + "]");
 			},
 			told: function(self, user, time, channel, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
@@ -126,5 +145,6 @@ var bot = new Lobot([helloWorld, logger]);
 bot.told("Test", new Date(), "#blah", "Hello!");
 bot.told("Test", new Date(), "#blah", "This is a test!");
 bot.told("Test", new Date(), "#blah", "Another test!");
-
 bot.dump("<i>Debug: " + bot.loggedMessages + "</i>");
+bot.help();
+bot.help("hi");

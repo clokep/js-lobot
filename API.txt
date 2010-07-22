@@ -19,8 +19,40 @@ Lobot implements
 				frequency	How often to run the event
 				number		Number of times to run the event (0 for infinity)
 		addModules		Adds an array of modules to the bot on the fly
+		help
+	Variables
+		channels, each of which has
+			Functions
+				in					Are we still in this channel?
+				banned				Were we banned from this channel?
+				rejoin				Attempt to reconnect if !in
+					Return
+						true	In channel or successfully rejoined
+						false	Otherwise
+			Variables
+				outgoingMessages	Array of outgoing messages to be sent in order
+				incomingMessages	Array of incoming messages to be parsed (note a
+									multiline message will be broken into multiple
+									incomingMessages)
+				accounts			Other people in this channel
+				mode				Returns the mode
+				name				Channel name
+		modules				Array of all modules
+		modulePacks			Holds meta data for all loaded module packs
 
-	Functions that get passed to modules
+Each module is an object which can implement the functions above, anything not
+implemented is skipped. All modules share the same variable space and should
+store data as part of the Lobot instance directly (or in an external datastore,
+i.e. a database, if necessary).
+	Functions
+		Those above
+
+Module Pack
+	Variables
+		requires	Array of modules required by this module
+		modules		Array of modules
+Modules
+	Functions that get passed to modules from Lobot
 		startup		Occurs on app start up
 		loggedin	Occurs on successful login to server
 		joined		Joined a chat/received a chat
@@ -47,35 +79,26 @@ Lobot implements
 		loggedout	Occurs when connection to server is lost (or logged out)
 		shutdown	OCcurs on app shut down
 	Variables
-		channels, each of which has
-			Functions
-				in					Are we still in this channel?
-				banned				Were we banned from this channel?
-				rejoin				Attempt to reconnect if !in
-					Return
-						true	In channel or successfully rejoined
-						false	Otherwise
-			Variables
-				outgoingMessages	Array of outgoing messages to be sent in order
-				incomingMessages	Array of incoming messages to be parsed (note a
-									multiline message will be broken into multiple
-									incomingMessages)
-				accounts			Other people in this channel
-				mode				Returns the mode
-				name				Channel name
-		modules				Array of all modules
-		modePacks			Holds meta data for all loaded module packs
-
-Each module is an object which can implement the functions above, anything not
-implemented is skipped. All modules share the same variable space and should
-store data as part of the Lobot instance directly (or in an external datastore,
-i.e. a database, if necessary).
-	Functions
-		Those above
-
-Module Pack
-	Variables
-		requires	Array of modules required by this module
-		modules		Array of modules
+		help
+			topic: string
 	
 Include jQuery? Prototype?
+
+Module Ideas:
+	Auth
+		Karma
+	Logger
+	Auto Replier (i.e. Markov)
+	Google Voice (send SMS when a message is sent to a user) <-- This could probably be a protocol
+		Stalk
+	Interaction with another protocol
+	Buildbot
+	WikiMedia
+	Add Modules dynamically (i.e. program over a protocol)
+	System module (shutdown, startup, command line access)
+	Translate
+	UUID generation
+	FTP
+	Mail
+	Infobot
+	RSS
