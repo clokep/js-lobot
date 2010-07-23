@@ -103,10 +103,6 @@ Lobot.prototype = {
 		});
 	},
 	
-	directSay: function(user, channel, message) {
-		this.debug("<b>" + user.name + " " + channel.name + " " + message + "</b>");
-	},
-	
 	directEmote: function(target, channel, what) {
 		this.dump("***" + target + " " + channel.name + " " + what + "***");
 	},
@@ -119,19 +115,27 @@ Lobot.prototype = {
 function Channel(self, name) {
 	this.users = [];
 	this.join();
+	this.name = name;
 	
 	this.self = self;
 };
 Channel.prototype = {
 	say: function(str) {
-		this.self.dump(">> " + this.name + ": " + str);
+		this.self.dump(">> <u>(" + this.name + ") " + str + "</u>");
 	},
 	
 	join: function() {}
 }
 
-function User(name) {
+function User(self, name) {
 	this.name = name;
+	
+	this.self = self;
+}
+User.prototype = {
+	say: function(message) {
+		this.self.dump("<b>" + this.name + ": " + message + "</b>");
+	}
 }
 
 var helloWorld = {
@@ -203,7 +207,7 @@ var logger = {
 // Initiate with a constructor
 var bot = new Lobot([/*helloWorld, logger,*/ infobot]);  bot.dump(new XRegExp("a b c","x").test("abc") + "<br>" + /abc/.test("abc"));
 var testChannel = new Channel(bot, "#blah");
-var testUser = new User("John Doe");
+var testUser = new User(bot, "John Doe");
 bot.told(testUser, new Date(), testChannel, "Hello!");
 bot.told(testUser, new Date(), testChannel, "This is a test!");
 bot.told(testUser, new Date(), testChannel, "Another test!");

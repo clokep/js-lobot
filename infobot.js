@@ -278,7 +278,7 @@ var infobot = {
 								}
 							} else if (typeE == 'DUNNO') {
 								var who = targetE ? targetE : userE.name;
-								self.directSay(userE, channelE, ":INFOBOT:REPLY <" + who + "> " + subject + " =" + database + "=> " + factoids[database][subject]);
+								userE.say(":INFOBOT:REPLY <" + who + "> " + subject + " =" + database + "=> " + factoids[database][subject]);
 								entry[1] = 'OLD';
 							}
 						}
@@ -491,7 +491,7 @@ var infobot = {
 					for each (bot in self['friendBots']) {
 						if (bot == user.name)
 							continue;
-						self.directSay(bot, channel, ":INFOBOT:QUERY <" + who + "> " + subject);
+						user.say(":INFOBOT:QUERY <" + who + "> " + subject);
 					}
 					//self['interbots']++; // XXX Do we want to do this?
 					return entry; // return reference to entry so that we can check if it has been replied or not
@@ -511,7 +511,7 @@ var infobot = {
 							self.factoidsay(userE.name, channelE, 'msg', "According to " + userE.name + ", " + subject + " " + database + " '" + object + "'.", directE, targetE);
 						else if (typeE == 'DUNNO') {
 							var who = targetE ? targetE : userE.name;
-							self.directSay(userE, channelE, ":INFOBOT:REPLY <" + who + " +> " + subject + " =" + database + "=> " + object);
+							userE.say(":INFOBOT:REPLY <" + who + " +> " + subject + " =" + database + "=> " + object);
 						}
 						entry[1] = 'OLD';
 					}
@@ -524,7 +524,7 @@ var infobot = {
 					// in the spirit of embrace-and-extend, we're going to say that
 					// :INFOBOT:DUNNO means "I don't know, but if you ever find
 					// out, please tell me".
-					self.directSay(user, channel, ":INFOBOT:DUNNO <" + self.name + "> " + subject);
+					user.say(":INFOBOT:DUNNO <" + self.name + "> " + subject);
 				}
 			},
 
@@ -542,7 +542,7 @@ var infobot = {
 				for each (db in ['is', 'are']) {
 					[database, subject] = this.findFactoid(db, subject);
 					if (factoids[database][subject]) {
-						self.directSay(user, channel, ":INFOBOT:REPLY <" + target + "> " + subject + " =" + database + "=> " + factoids[database][subject]);
+						user.say(":INFOBOT:REPLY <" + target + "> " + subject + " =" + database + "=> " + factoids[database][subject]);
 						count++;
 					}
 				}
@@ -582,13 +582,13 @@ var infobot = {
 
 			// internal helper routines
 
-			factoidSay: function(self, user, channel, how, what, direct, target) { // XXX self.directSay? self.directEmote?
+			factoidSay: function(self, user, channel, how, what, direct, target) { // XXX user.say? self.directEmote?
 				if (target) {
 					this.targettedSay(user.name, channel, "told " + target, true);
 					if (how == 'me')
 						self.directEmote(target, channel, what);
 					else if (what.length)
-						self.directSay(user, channel, user.name + " wanted you to know: " + what);
+						user.say(user.name + " wanted you to know: " + what);
 				} else if (how == 'me')
 					self.emote(event, what);
 				else {
@@ -597,7 +597,7 @@ var infobot = {
 					else {
 						if (direct) {
 							this.targettedSay(user.name, channel, substr(what, 0, self['maxInChannel']) + '... (rest /msged)' , true);
-							self.directSay(user, channel, what);
+							user.say(what);
 						} else
 							this.targettedSay(user.name, channel, substr(what, 0, self['maxInChannel']) + '... (there is more; ask me in a /msg)' , true);
 					}
