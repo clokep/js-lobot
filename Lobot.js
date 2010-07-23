@@ -103,9 +103,31 @@ Lobot.prototype = {
 		});
 	},
 	
+	directSay: function(user, channel, message) {
+		this.debug("<b>" + user + " " + channel.name + " " + message);
+	},
+	
+	directEmote: function(target, channel, what) {
+		this.dump("***" + target + " " + channel.name + " " + what + "***");
+	},
+	
 	shutdown: function() {
 		this.executeModuleFunction("shutdown");
 	}
+}
+
+function Channel(self, name) {
+	this.users = [];
+	this.join();
+	
+	this.bot = self;
+};
+Channel.prototype = {
+	say: function(str) {
+		this.self.dump(">> " + this.name + ": " + str);
+	},
+	
+	join: function() {}
 }
 
 var helloWorld = {
@@ -175,16 +197,16 @@ var logger = {
 };
 
 // Initiate with a constructor
-var bot = new Lobot([helloWorld, logger, infobot]);  bot.dump(new XRegExp("a b c","x").test("abc") + "<br>" + /abc/.test("abc"));
-bot.told("Test", new Date(), "#blah", "Hello!");
-bot.told("Test", new Date(), "#blah", "This is a test!");
-bot.told("Test", new Date(), "#blah", "Another test!");
-bot.debug(bot.loggedMessages.join("<br>"));
-bot.help();
-bot.help("hi");
-bot.told("Test", new Date(), "#blah", "foo is bar");
-bot.told("Test", new Date(), "#blah", "geez, FOOD is BAR");
+var bot = new Lobot([/*helloWorld, logger,*/ infobot]);  bot.dump(new XRegExp("a b c","x").test("abc") + "<br>" + /abc/.test("abc"));
+var channel = new Channel(bot, "#blah");
+bot.told("Test", new Date(), channel, "Hello!");
+bot.told("Test", new Date(), channel, "This is a test!");
+bot.told("Test", new Date(), channel, "Another test!");
+//bot.debug(bot.loggedMessages.join("<br>"));
+//bot.help();
+//bot.help("hi");
+bot.told("Test", new Date(), channel, "foo is bar");
+bot.told("Test", new Date(), channel, "geez, FOOD is BAR");
 
 
-
-
+bot.debug(JSON.stringify(bot.factoids));

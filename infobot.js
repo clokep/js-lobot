@@ -10,24 +10,47 @@ var infobot = {
 	modules: [
 		{
 			startup: function(self) {
-				this.factoids = [];
+				self.factoids = [];
+				self['autoLearn'] = ['*']; // in the auto* variables, '*' means 'all channels'
+				self['autoHelp'] = [];
+				self['autoEdit'] = [];
+				self['neverLearn'] = []; // the never* variables override the auto* variables
+				self['neverHelp'] = [];
+				self['neverEdit'] = [];
+				self['eagerToHelp'] = true; // whether to even need the "?" on questions
+				self['autoIgnore'] = []; // list of nicks for which to always turn off auto*
+				self['teachers'] = []; // list of users who may teach, leave blank to allow anyone to teach
+				self['factoidPositions'] = {'is': [], 'are': []};
+				self['friendBots'] = [];
+				self['prefixes'] = ['', 'I have heard that ', '', 'Maybe ', 'I seem to recall that ', '', 'iirc, ', '',
+									'Was it not... er, someone, who said: ', '', 'Well, ', 'um... ', 'Oh, I know this one! ',
+									'', 'everyone knows that! ', '', 'hmm... I think ', 'well, duh. '];
+				self['researchNotes'] = [];
+				self['pruneDelay'] = 120; // how frequently to look through the research notes and remove expired items
+				self['queryTimeToLive'] = 600; // queries can be remembered up to ten minutes by default
+				self['dunnoTimeToLive'] = 604800; // DUNNO queries can be remembered up to a week by default
+				self['noIdeaDelay'] = 2; // how long to wait before admitting lack of knowledge
+				self['questions'] = 0; // how many questions there have been since the last load
+				self['edits'] = 0; // how many edits (learning, editing, forgetting) there have been since the last load
+				self['interbots'] = 0; // how many times we have spoken with other bots
+				self['maxInChannel'] = 200; // beyond this answers are /msged
 			},
 
 			told: function(self, user, time, channel, message, rawMessage) { // XXX barely started
-				this.doFactoidCheck(self, user, time, channel, rawMessage, true);
+				self.debug(this.doFactoidCheck(self, user, time, channel, rawMessage, true));
 			},
 
-			factoidExists(database, subject) {
-				return this.factoids[database] && this.factoids[database][subject];
+			factoidExists: function(database, subject) {
+				return self.factoids[database] && self.factoids[database][subject];
 			},
-			addFactoid(database, subject, object) {
-				if (!this.factoids[database])
-					this.factoids[database] = [];
-				this.factoids[database][subject] = object;
+			addFactoid: function(database, subject, object) {
+				if (!self.factoids[database])
+					self.factoids[database] = [];
+				self.factoids[database][subject] = object;
 			},
 
 			doFactoidCheck: function(self, user, time, channel, message, direct, baffled) { // XXX Not done
-				self.dump(this.factoids);
+				self.dump(self.factoids);
 				var matches, shortMessage;
 				if (matches = (new XRegExp(
 						"^\\s* (?:\\w+[:.!\\s]+\\s+)?\
@@ -206,15 +229,15 @@ var infobot = {
 						subject = this.canonicalizeFactoid(database, subject);
 					else {
 						var oldSubject = this.anonicalizeFactoid(database, subject);
-						if (factoids[database][oldSubject]) {
+						if (this.factoidExists(database, oldSubject)) {
 							delete factoids[database][oldSubject];
 						}
 					}
-					if (replace || !this.factoids[database][subject]) {
+					if (replace || !this.factoidExists(database, subject)) {
 						self.debug("Learning that " + subject + " " + database + " '" + object + "'.");
-						this.factoids[database][subject] = object;
+						this.addFactoid(database, subject, object);
 					} else if (!add) {
-						var what = factoids[database][subject].split('|');
+						var what = self.factoids[database][subject].split('|');
 						// XXX local $" = '\' or \'';
 						if (!fromBot) {
 							if (what && what[0] == object) {
@@ -227,7 +250,7 @@ var infobot = {
 						return false; // failed to update database
 					} else {
 						self.debug("Learning that " + subject + " " + database + " also '" + object + "'.");
-						factoids[database][subject] += "|" + object;
+						self.factoids[database][subject] += "|" + object;
 					}
 					if (!fromBot)
 						this.targettedSay(user.name, channel, 'ok', direct);
@@ -246,7 +269,7 @@ var infobot = {
 											self.debug("I now know what '" + subject + "' " + database + ", so telling " + targetE + ", since " + userE.name + " told me to.");
 										else
 											selfdebug("I now know what '" + subject + "' " + database + ", so telling " + userE.name + " who wanted to know.");
-										this.factoidSay(userE, channelE, how, what, directE, targetE);
+										self.factoidsay(userE, channelE, how, what, directE, targetE);
 										entry[1] = 'OLD';
 									} else {
 										// either propagated, or database doesn't match requested database, or internal error
@@ -281,10 +304,10 @@ var infobot = {
 						//self['questions']++; // XXX Do we want to do this?
 						[how, what, propagated] = this.getFactoid(self, user, channel, database, subject, target, direct);
 						if (!how)
-							this.scheduleNoIdea(self, event, database, subject, direct, propagated); // XXX Check this
+							this.scheduleNoIdea(self, user, channel, database, subject, direct, propagated); // XXX Check this
 						else {
 							self.debug("Telling " + user.name + " about " + subject + ".");
-							this.factoidSay(self, user, channel, how, what, direct, target);
+							self.factoidsay(self, user, channel, how, what, direct, target);
 						}
 					}
 				}
@@ -294,12 +317,12 @@ var infobot = {
 				var is = this.canonicalizeFactoid('is', subject);
 				var are = this.canonicalizeFactoid('are', subject);
 				if (is || are) {
-					if (this.factoids['is'][is]) {
-						var what = this.factoids['is'][is].split('|').join("\' or \'");
+					if (self.factoids['is'][is]) {
+						var what = self.factoids['is'][is].split('|').join("\' or \'");
 						this.targettedSay(user.name, channel, is + " is '" + what + "'.", true);
 					}
-					if (this.factoids['are'][are]) {
-						var what = this.factoids['are'][are].split('|').join("\' or \'");
+					if (self.factoids['are'][are]) {
+						var what = self.factoids['are'][are].split('|').join("\' or \'");
 						this.targettedSay(user.name, channel, are + " are '" + what + "'.", true);
 					}
 				} else {
@@ -319,8 +342,8 @@ var infobot = {
 					visitedAliases = [];
 				var database;
 				[database, subject] = this.findFactoid(originalDatabase, subject);
-				if (this.factoids[database][subject]) {
-					var alternatives = this.factoids[database][subject].split('|');
+				if (self.factoids[database][subject]) {
+					var alternatives = self.factoids[database][subject].split('|');
 					var answer;
 					if (alternatives) {
 						if (!self['factoidPositions'][database][subject]
@@ -368,8 +391,8 @@ var infobot = {
 			},
 
 			canonicalizeFactoid: function(database, subject) { // DONE
-				if (this.factoids[database] && this.factoids[database][subject])
-					for (key in this.factoids[database])
+				if (self.factoids[database] && self.factoids[database][subject])
+					for (key in self.factoids[database])
 						if (key.toLowerCase() == subject.toLowerCase())
 							subject = key;
 				return subject;
@@ -379,9 +402,9 @@ var infobot = {
 				if (!database) {
 					database = 'is';
 					subject = this.canonicalizeFactoid('is', subject);
-					if (!this.factoids['is'][subject]) {
+					if (!self.factoids['is'][subject]) {
 						subject = this.canonicalizeFactoid('are', subject);
-						if (this.factoids['are'][subject])
+						if (self.factoids['are'][subject])
 							$database = 'are';
 					}
 				} else
@@ -469,7 +492,7 @@ var infobot = {
 					for each (bot in self['friendBots']) {
 						if (bot == user.name)
 							continue;
-						this.directSay(bot, channel, ":INFOBOT:QUERY <" + who + "> " + subject);
+						self.directSay(bot, channel, ":INFOBOT:QUERY <" + who + "> " + subject);
 					}
 					//self['interbots']++; // XXX Do we want to do this?
 					return entry; // return reference to entry so that we can check if it has been replied or not
@@ -486,10 +509,10 @@ var infobot = {
 					for each (entry in self['researchNotes'][subject.toLowerCase()]) {
 						[userE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = entry;
 						if (typeE == 'QUERY')
-							this.factoidSay(userE.name, channelE, 'msg', "According to " + userE.name + ", " + subject + " " + database + " '" + object + "'.", directE, targetE);
+							self.factoidsay(userE.name, channelE, 'msg', "According to " + userE.name + ", " + subject + " " + database + " '" + object + "'.", directE, targetE);
 						else if (typeE == 'DUNNO') {
 							var who = targetE ? targetE : userE.name;
-							this.directSay(userE, channelE, ":INFOBOT:REPLY <" + who + " +> " + subject + " =" + database + "=> " + object);
+							self.directSay(userE, channelE, ":INFOBOT:REPLY <" + who + " +> " + subject + " =" + database + "=> " + object);
 						}
 						entry[1] = 'OLD';
 					}
@@ -502,7 +525,7 @@ var infobot = {
 					// in the spirit of embrace-and-extend, we're going to say that
 					// :INFOBOT:DUNNO means "I don't know, but if you ever find
 					// out, please tell me".
-					this.directSay(user, channel, ":INFOBOT:DUNNO <" + self.name + "> " + subject);
+					self.directSay(user, channel, ":INFOBOT:DUNNO <" + self.name + "> " + subject);
 				}
 			},
 
@@ -584,13 +607,13 @@ var infobot = {
 
 			targettedSay: function(userName, channel, message, direct) { // DONE
 				if (direct && message.length)
-					channel.say(channel, userName + ": " + message);
+					channel.say(userName + ": " + message);
 			},
 
 			countFactoids: function(self) { // DONE
 				// XXX do we want to do this?
 				var sum = 0;
-				for each (factoid in this.factoids)
+				for each (factoid in self.factoids)
 					sum += factoid.length;
 				return sum;
 			},
@@ -600,15 +623,15 @@ var infobot = {
 					// XXX converted from perl, do we care about this?
 					for each (user in this['autoIgnore'])
 						if (userName == user)
-							return 0;
+							return false;
 					for each (channel in this["never" + type])
 						if (channel == '*' || channelName == channel)
-							return 0;
+							return false;
 					for each (channel in this["auto" + type])
 						if (channel == '*' || channelName == channel)
-							return 1;
+							return true;
 				}
-				return 0;
+				return false;
 			},
 
 			noIdea: function(self, userName, channel, database, subject, direct) { // DONE
