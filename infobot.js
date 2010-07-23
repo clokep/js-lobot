@@ -37,7 +37,7 @@ var infobot = {
 			},
 
 			told: function(self, user, time, channel, message, rawMessage) { // XXX barely started
-				self.debug(this.doFactoidCheck(self, user, time, channel, rawMessage, true));
+				self.debug("Told: " + this.doFactoidCheck(self, user, time, channel, rawMessage, true));
 			},
 
 			factoidExists: function(database, subject) {
@@ -50,7 +50,6 @@ var infobot = {
 			},
 
 			doFactoidCheck: function(self, user, time, channel, message, direct, baffled) { // XXX Not done
-				self.dump(self.factoids);
 				var matches, shortMessage;
 				if (matches = (new XRegExp(
 						"^\\s* (?:\\w+[:.!\\s]+\\s+)?\
@@ -268,7 +267,7 @@ var infobot = {
 										if (targetE)
 											self.debug("I now know what '" + subject + "' " + database + ", so telling " + targetE + ", since " + userE.name + " told me to.");
 										else
-											selfdebug("I now know what '" + subject + "' " + database + ", so telling " + userE.name + " who wanted to know.");
+											self.debug("I now know what '" + subject + "' " + database + ", so telling " + userE.name + " who wanted to know.");
 										self.factoidsay(userE, channelE, how, what, directE, targetE);
 										entry[1] = 'OLD';
 									} else {
@@ -405,7 +404,7 @@ var infobot = {
 					if (!self.factoids['is'][subject]) {
 						subject = this.canonicalizeFactoid('are', subject);
 						if (self.factoids['are'][subject])
-							$database = 'are';
+							database = 'are';
 					}
 				} else
 					subject = this.canonicalizeFactoid(database, subject);

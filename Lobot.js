@@ -15,7 +15,7 @@ Lobot.prototype = {
 		document.getElementById("console").innerHTML += str + "<br>";
 	},
 	debug: function (str) {
-		this.dump("[<i>" + str + "<i>]");
+		this.dump("[<i>" + str + "</i>]");
 	},
 
 	addModulePacks: function(modulePacks) {
@@ -104,7 +104,7 @@ Lobot.prototype = {
 	},
 	
 	directSay: function(user, channel, message) {
-		this.debug("<b>" + user + " " + channel.name + " " + message);
+		this.debug("<b>" + user.name + " " + channel.name + " " + message + "</b>");
 	},
 	
 	directEmote: function(target, channel, what) {
@@ -120,7 +120,7 @@ function Channel(self, name) {
 	this.users = [];
 	this.join();
 	
-	this.bot = self;
+	this.self = self;
 };
 Channel.prototype = {
 	say: function(str) {
@@ -128,6 +128,10 @@ Channel.prototype = {
 	},
 	
 	join: function() {}
+}
+
+function User(name) {
+	this.name = name;
 }
 
 var helloWorld = {
@@ -198,15 +202,16 @@ var logger = {
 
 // Initiate with a constructor
 var bot = new Lobot([/*helloWorld, logger,*/ infobot]);  bot.dump(new XRegExp("a b c","x").test("abc") + "<br>" + /abc/.test("abc"));
-var channel = new Channel(bot, "#blah");
-bot.told("Test", new Date(), channel, "Hello!");
-bot.told("Test", new Date(), channel, "This is a test!");
-bot.told("Test", new Date(), channel, "Another test!");
+var testChannel = new Channel(bot, "#blah");
+var testUser = new User("John Doe");
+bot.told(testUser, new Date(), testChannel, "Hello!");
+bot.told(testUser, new Date(), testChannel, "This is a test!");
+bot.told(testUser, new Date(), testChannel, "Another test!");
 //bot.debug(bot.loggedMessages.join("<br>"));
 //bot.help();
 //bot.help("hi");
-bot.told("Test", new Date(), channel, "foo is bar");
-bot.told("Test", new Date(), channel, "geez, FOOD is BAR");
+bot.told(testUser, new Date(), testChannel, "foo is bar");
+bot.told(testUser, new Date(), testChannel, "geez, FOOD is BAR");
+bot.told(testUser, new Date(), testChannel, "tell roger about me!");
 
-
-bot.debug(JSON.stringify(bot.factoids));
+bot.debug("Factoids: " + JSON.stringify(bot.factoids));
