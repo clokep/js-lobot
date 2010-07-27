@@ -82,13 +82,13 @@ var infobot = {
 					var friends = self['friendBots'].length == 1 ? '1 bot friend' : self['friendBots'].length + ' bot friends';
 					this.targettedSay(user.name, channel, "I have " + sum + " factoids in my database and " + friends + " + to help me answer questions. " +
 										"Since the last reload, I've been asked " + questions + ", performed " + edits + ", and spoken with other bots " + interbots + ".", true);
-				} else if (channel.name == '' && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) {
+				} else if (!channel.name.length && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) {
 					if (user.name != self.name)
 						this.receivedDunno(self, user, channel, matches[1], matches[2]);
-				} else if (channel.name == '' && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage))) {
+				} else if (!channel.name.length && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage))) {
 					if (user.name != self.name)
 						this.receivedQuery(self, user, channel, matches[2], matches[1]);
-				} else if (channel.name == '' && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage))) {
+				} else if (!channel.name.length && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage))) {
 					if (user.name != self.name)
 						this.receivedReply(self, user, channel, matches[3], matches[2], matches[1], matches[4]);
 				} else if (matches = /^\s*literal\s+(.+?)\s*$/.exec(rawMessage)) {
@@ -111,7 +111,7 @@ var infobot = {
 				return false; // we've dealt with it, no need to do anything else.
 			},
 
-			doFactoidCheck: function(self, user, time, channel, message, direct, baffled) { // XXX Done???
+			doFactoidCheck: function(self, user, time, channel, message, direct, baffled) {
 				var matches, shortMessage;
 				if (matches = (new XRegExp(
 						"^\\s* (?:\\w+[:.!\\s]+\\s+)?\
@@ -334,7 +334,7 @@ var infobot = {
 							if (typeE == 'QUERY') {
 								if ((targetE && user.name != targetE) ||
 									(user.name != userE.name &&
-									 (channel.name == '' || channel.name != channelE.name))) {
+									 (!channel.name.length || channel.name != channelE.name))) {
 									[how, what, propagated] = this.getFactoid(userE, timeE, channelE, databaseE, subjectE,
 																					 targetE, directE, visitedAliasesE, user.name);
 									if (how) {
@@ -386,7 +386,7 @@ var infobot = {
 				}
 			},
 
-			literal: function(user, channel, subject) { // DONE
+			literal: function(user, channel, subject) {
 				var is = this.canonicalizeFactoid(self, 'is', subject);
 				var are = this.canonicalizeFactoid(self, 'are', subject);
 				if (is || are) {
@@ -573,7 +573,7 @@ var infobot = {
 					return asked;
 			},
 
-			receivedReply: function(self, user, channel, database, subject, target, object) { // XXX set factoid
+			receivedReply: function(self, user, channel, database, subject, target, object) {
 				self['interbots']++;
 				if (!this.setFactoid(self, user, channel, 0, subject, database, 0, object, 1, 1)
 					&& self['researchNotes'][subject.toLowerCase()]) {
@@ -608,7 +608,7 @@ var infobot = {
 					self['researchNotes'][subject.toLowerCase()].push([event, 'DUNNO', null, _$1, target, 0, {}, time]); // What is the $1 referring to
 			},
 
-			tellBot: function(self, user, channel, subject, target) { // DONE
+			tellBot: function(self, user, channel, subject, target) {
 				var count = 0;
 				var database;
 				for each (db in ['is', 'are']) {
@@ -654,44 +654,42 @@ var infobot = {
 
 			// internal helper routines
 
-			factoidSay: function(self, user, channel, how, what, direct, target) { // XXX user.say? self.directEmote?
-				if (target) {
+			factoidSay: function(self, user, channel, how, what, direct, target) { // XXX self.directEmote?
+				if (target) { // XXX this needs to check if the user is "known"
 					this.targettedSay(user.name, channel, "told " + target, true);
 					if (how == 'me')
 						self.directEmote(target, channel, what);
 					else if (what.length)
-						user.say(user.name + " wanted you to know: " + what);
+						user.say(target + " wanted you to know: " + what); // This should be target.say
 				} else if (how == 'me')
 					self.emote(event, what);
 				else {
-					if (channel.name == '' || what.length < self['maxInChannel'])
+					if (!channel.name.length || what.length < self['maxInChannel'])
 						this.targettedSay(user.name, channel, what, true);
 					else {
 						if (direct) {
-							this.targettedSay(user.name, channel, substr(what, 0, self['maxInChannel']) + '... (rest /msged)' , true);
+							this.targettedSay(user.name, channel, what.substr(0, self['maxInChannel']) + '... (rest /msged)' , true);
 							user.say(what);
 						} else
-							this.targettedSay(user.name, channel, substr(what, 0, self['maxInChannel']) + '... (there is more; ask me in a /msg)' , true);
+							this.targettedSay(user.name, channel, whatsubstr(0, self['maxInChannel']) + '... (there is more; ask me in a /msg)' , true);
 					}
 				}
 			},
 
-			targettedSay: function(userName, channel, message, direct) { // DONE
+			targettedSay: function(userName, channel, message, direct) {
 				if (direct && message.length)
 					channel.say(userName + ": " + message);
 			},
 
-			countFactoids: function(self) { // DONE
-				// XXX do we want to do this?
+			countFactoids: function(self) {
 				var sum = 0;
 				for each (factoid in self.factoids)
 					sum += factoid.length;
 				return sum;
 			},
 
-			allowed: function(userName, channelName, type) { // DONE
+			allowed: function(userName, channelName, type) {
 				if (!channelName.length) {
-					// XXX converted from perl, do we care about this?
 					for each (user in this['autoIgnore'])
 						if (userName == user)
 							return false;

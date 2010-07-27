@@ -5,7 +5,7 @@ function Lobot(name, modulePacks) {
 	this.addModulePacks(modulePacks);
 	this.startup();
 	
-	this.users = [];
+	this.users = [new User(this, this.name)];
 	this.channels = [];
 };
 Lobot.prototype = {
