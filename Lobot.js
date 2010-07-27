@@ -118,11 +118,10 @@ function Channel(self, name) {
 };
 Channel.prototype = {
 	say: function(message, user) { // XXX check message length so we don't send empty stuff
-		this.self.debug(message);
 		if (user)
-			this.self.dump(">> (" + this.name + ") <u>" + user.name + ": " + message + "</u>");
+			this.self.dump(this.name + " >> <u>" + user.name + ": " + message + "</u>");
 		else
-			this.self.dump(">> (" + this.name + ") <u>" + message + "</u>");
+			this.self.dump(this.name + " >> <u>" + message + "</u>");
 	},
 	emote: function(what) {
 		// XXX should send /me what

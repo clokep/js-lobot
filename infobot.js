@@ -72,7 +72,7 @@ var infobot = {
 		// JavaScript port of infobot.bm
 		told: function(self, user, time, channel, message, rawMessage) {
 			var matches;
-		
+
 			if (matches = (new XRegExp("^\\s*status[?\\s]*$", "si").exec(rawMessage))) {
 				var sum = this.countFactoids();
 				var questions = self['questions'] == 1 ? "1 question" : self['questions'] + " questions";
@@ -85,19 +85,20 @@ var infobot = {
 							questions + ", performed " + edits +
 							", and spoken with other bots " + interbots + ".",
 							user);
-			} else if (!channel.name.length && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage)))
+			} else if (!channel.name.length && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) { 
 				if (user.name != self.name)
 					this.receivedDunno(self, user, channel, matches[1], matches[2]);
-			else if (!channel.name.length && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage)))
+			} else if (!channel.name.length && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage))) {
 				if (user.name != self.name)
 					this.receivedQuery(self, user, channel, matches[2], matches[1]);
-			else if (!channel.name.length && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage)))
+			} else if (!channel.name.length && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage))) {
 				if (user.name != self.name)
 					this.receivedReply(self, user, channel, matches[3], matches[2], matches[1], matches[4]);
-			else if (matches = /^\s*literal\s+(.+?)\s*$/.exec(rawMessage))
+			} else if (matches = /^\s*literal\s+(.+?)\s*$/.exec(rawMessage))
 				this.literal(self, user, channel, matches[1]);
-			else if (!this.doFactoidCheck(self, user, time, channel, rawMessage, true))
-				//return $self->SUPER::Told(@_); // XXX What do we do?
+			else if (!this.doFactoidCheck(self, user, time, channel, rawMessage, true)) {
+				//return self.told(@_); // XXX What do we do?
+			}
 			return false; // we've dealt with it, no need to do anything else. // XXX
 		},
 
@@ -314,10 +315,10 @@ var infobot = {
 					var what = self.factoids[database][subject].split('|');
 					// XXX local $" = '\' or \'';
 					if (!fromBot)
-						if (what && what[0] == object)
+						if (what && what[0] == object) {
 							if (direct)
 								channel.say('Yep, that\'s what I thought. Thanks for confirming it.', user);
-						else
+						} else
 							// XXX "that's one of the alternatives, sure..."
 							if (direct)
 								channel.say("But " + subject + " " + database + " '" + what + "'...", user);
@@ -368,10 +369,10 @@ var infobot = {
 
 		giveFactoid: function(self, user, time, channel, database, subject, direct, target) {
 			if (direct || this.allowed(user.name, channel.name, 'Help')) {
-				if ((new RegExp("^" + self.name + "$", "i")).test(target))
+				if ((new RegExp("^" + self.name + "$", "i")).test(target)) {
 					if (direct)
 						channel.say('Oh, yeah, great idea, get me to talk to myself.', user);
-				else {
+				} else {
 					if (subject == 'you') {
 						// first, skip some words that are handled by other commonly-used modules
 						// in particular, 'who are you' is handled by Greeting.bm
