@@ -1,4 +1,5 @@
-function Lobot(modulePacks) {
+function Lobot(name, modulePacks) {
+	this.name = name;
 	this.modules = [];
 	this.modulePacks = [{name: "core", author: "Patrick Cloke", version: 0.1}];
 	this.addModulePacks(modulePacks);
@@ -116,25 +117,25 @@ function Channel(self, name) {
 	this.users = [];
 	this.join();
 	this.name = name;
-	
+
 	this.self = self;
 };
 Channel.prototype = {
 	say: function(str) {
-		this.self.dump(">> <u>(" + this.name + ") " + str + "</u>");
+		this.self.dump(">> (" + this.name + ") <u>" + str + "</u>");
 	},
-	
+
 	join: function() {}
 }
 
 function User(self, name) {
 	this.name = name;
-	
+
 	this.self = self;
 }
 User.prototype = {
 	say: function(message) {
-		this.self.dump("<b>" + this.name + ": " + message + "</b>");
+		this.self.dump(">> " + this.name + ": <b>" + message + "</b>");
 	}
 }
 
@@ -155,7 +156,7 @@ var helloWorld = {
 					return this.match(new RegExp("(?:^|\\W)" + verb + "(?:\\W|$)", "i"));
 				}, rawMessage)) {
 					//channel.outgoingMessages.push("Hi! " + user.name);
-					self.dump("<< Hi! " + user);
+					channel.say("<< Hi! " + user);
 				}
 				//self.dump(user + " " + time + " " + JSON.stringify(message));
 				return;
@@ -205,17 +206,20 @@ var logger = {
 };
 
 // Initiate with a constructor
-var bot = new Lobot([/*helloWorld, logger,*/ infobot]);  bot.dump(new XRegExp("a b c","x").test("abc") + "<br>" + /abc/.test("abc"));
+var bot = new Lobot("Testbot", [/*helloWorld, logger,*/ infobot]);
 var testChannel = new Channel(bot, "#blah");
-var testUser = new User(bot, "John Doe");
+var testUser = new User(bot, "John_Doe");
 bot.told(testUser, new Date(), testChannel, "Hello!");
 bot.told(testUser, new Date(), testChannel, "This is a test!");
 bot.told(testUser, new Date(), testChannel, "Another test!");
 //bot.debug(bot.loggedMessages.join("<br>"));
 //bot.help();
-//bot.help("hi");
+//bot.help("no");
 bot.told(testUser, new Date(), testChannel, "foo is bar");
 bot.told(testUser, new Date(), testChannel, "geez, FOOD is BAR");
 bot.told(testUser, new Date(), testChannel, "tell roger about me!");
+bot.told(testUser, new Date(), testChannel, "John_Doe is awesome!!");
+bot.told(testUser, new Date(), testChannel, "tell roger about me!");
+bot.told(testUser, new Date(), testChannel, "what is food?");
 
 bot.debug("Factoids: " + JSON.stringify(bot.factoids));
