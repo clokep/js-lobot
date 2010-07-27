@@ -74,17 +74,16 @@ var infobot = {
 			var matches;
 
 			if (matches = (new XRegExp("^\\s*status[?\\s]*$", "si").exec(rawMessage))) {
-				var sum = this.countFactoids();
+				var sum = this.countFactoids(self);
 				var questions = self['questions'] == 1 ? "1 question" : self['questions'] + " questions";
 				var edits = self['edits'] == 1 ? "1 edit" : self['edits'] + " edits";
 				var interbots = self['interbots'] == 1 ? "1 time" : self['interbots'] + " times";
 				var friends = self['friendBots'].length == 1 ? '1 bot friend' : self['friendBots'].length + ' bot friends';
 				channel.say("I have " + sum + " factoids in my database and " +
-							friends + " + to help me answer questions. " +
-							"Since the last reload, I've been asked " +
-							questions + ", performed " + edits +
-							", and spoken with other bots " + interbots + ".",
-							user);
+							friends + " to help me answer questions. Since the"
+							+ " last reload, I've been asked " + questions + ","
+							+ " performed " + edits + ", and spoken with other "
+							+ "bots " + interbots + ".", user);
 			} else if (!channel.name.length && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) { 
 				if (user.name != self.name)
 					this.receivedDunno(self, user, channel, matches[1], matches[2]);
@@ -611,6 +610,7 @@ var infobot = {
 			self['interbots']++;
 			if (!this.tellBot(event, subject, target))
 				// store the request
+				// XXX this will probably break, we never check if self['researchNotes'] exists
 				self['researchNotes'][subject.toLowerCase()].push([event, 'DUNNO', null, _$1, target, 0, {}, time]); // What is the $1 referring to
 		},
 
@@ -651,7 +651,7 @@ var infobot = {
 				// in theory, userE = user, channelE = channel,
 				// databaseE = database, subjectE = subject, targetE depends
 				// on if this was triggered by a tell, directE = direct,
-				//visitedAliasesE is opaque, and timeE is opaque.
+				// visitedAliasesE is opaque, and timeE is opaque.
 				if (typeE != 'OLD')
 					this.noIdea(self, user, channel, database, subject, direct);
 			} else
@@ -684,8 +684,9 @@ var infobot = {
 
 		countFactoids: function(self) {
 			var sum = 0;
-			for each (factoid in self.factoids)
-				sum += factoid.length;
+			for each (database in self.factoids)
+				for each (factoid in database)
+					sum++;
 			return sum;
 		},
 

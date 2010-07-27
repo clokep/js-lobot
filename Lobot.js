@@ -80,7 +80,6 @@ Lobot.prototype = {
 	},
 	
 	help: function(helpTopic) {
-		var self = this;
 		if (helpTopic)
 			this.moduleRunner(function(module) {
 				for (topic in module.help)
@@ -123,9 +122,12 @@ Channel.prototype = {
 		else
 			this.self.dump(this.name + " >> <u>" + message + "</u>");
 	},
-	emote: function(what) {
+	emote: function(what, user) {
 		// XXX should send /me what
-		this.self.dump("<u>*** " + this.self.name + " " + what + "***</u>");
+		if (user)
+			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + " " + user.name + "</u>***");
+		else
+			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + "</u>***");
 	},
 
 	join: function() {}
@@ -138,11 +140,11 @@ function User(self, name) {
 }
 User.prototype = {
 	say: function(message) {
-		this.self.dump(">> (" + this.name + ") <b>" + message + "</b>");
+		this.self.dump(this.name + " >> <b>" + message + "</b>");
 	},
 	emote: function(what) {
 		// XXX should send /msg /me what
-		this.self.dump("(" + this.name + ") <b>***" + what + "***</b>");
+		this.self.dump(this.name + " <b>***" + what + "***</b>");
 	}
 }
 
@@ -240,5 +242,7 @@ bot.told(testUser, new Date(), testChannel, "who is snack");
 
 bot.told(testUser, new Date(), testChannel, "kick is <action>kicks you!");
 bot.told(testUser, new Date(), testChannel, "what is kick");
+
+bot.told(testUser, new Date(), testChannel, "status");
 
 bot.debug("Factoids: " + JSON.stringify(bot.factoids));
