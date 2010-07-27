@@ -79,23 +79,26 @@ var infobot = {
 				var edits = self['edits'] == 1 ? "1 edit" : self['edits'] + " edits";
 				var interbots = self['interbots'] == 1 ? "1 time" : self['interbots'] + " times";
 				var friends = self['friendBots'].length == 1 ? '1 bot friend' : self['friendBots'].length + ' bot friends';
-				this.targettedSay(user.name, channel, "I have " + sum + " factoids in my database and " + friends + " + to help me answer questions. " +
-									"Since the last reload, I've been asked " + questions + ", performed " + edits + ", and spoken with other bots " + interbots + ".", true);
-			} else if (!channel.name.length && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) {
+				channel.say("I have " + sum + " factoids in my database and " +
+							friends + " + to help me answer questions. " +
+							"Since the last reload, I've been asked " +
+							questions + ", performed " + edits +
+							", and spoken with other bots " + interbots + ".",
+							user);
+			} else if (!channel.name.length && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage)))
 				if (user.name != self.name)
 					this.receivedDunno(self, user, channel, matches[1], matches[2]);
-			} else if (!channel.name.length && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage))) {
+			else if (!channel.name.length && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage)))
 				if (user.name != self.name)
 					this.receivedQuery(self, user, channel, matches[2], matches[1]);
-			} else if (!channel.name.length && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage))) {
+			else if (!channel.name.length && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage)))
 				if (user.name != self.name)
 					this.receivedReply(self, user, channel, matches[3], matches[2], matches[1], matches[4]);
-			} else if (matches = /^\s*literal\s+(.+?)\s*$/.exec(rawMessage)) {
+			else if (matches = /^\s*literal\s+(.+?)\s*$/.exec(rawMessage))
 				this.literal(self, user, channel, matches[1]);
-			} else if (!this.doFactoidCheck(self, user, time, channel, rawMessage, true)) {
+			else if (!this.doFactoidCheck(self, user, time, channel, rawMessage, true))
 				//return $self->SUPER::Told(@_); // XXX What do we do?
-			}
-			return 0; // we've dealt with it, no need to do anything else.
+			return false; // we've dealt with it, no need to do anything else. // XXX
 		},
 
 		baffled: function(self, user, time, channel, message, direct) { // XXX check this
@@ -300,10 +303,9 @@ var infobot = {
 				if (!replace)
 					subject = this.canonicalizeFactoid(self, database, subject);
 				else {
-					var oldSubject = this.anonicalizeFactoid(database, subject);
-					if (this.factoidExists(self, database, oldSubject)) {
-						delete factoids[database][oldSubject];
-					}
+					var oldSubject = this.canonicalizeFactoid(self, database, subject);
+					if (this.factoidExists(self, database, oldSubject))
+						delete self.factoids[database][oldSubject];
 				}
 				if (replace || !this.factoidExists(self, database, subject)) {
 					self.debug("Learning that " + subject + " " + database + " '" + object + "'.");
@@ -311,21 +313,22 @@ var infobot = {
 				} else if (!add) {
 					var what = self.factoids[database][subject].split('|');
 					// XXX local $" = '\' or \'';
-					if (!fromBot) {
-						if (what && what[0] == object) {
-							this.targettedSay(user.name, channel, 'Yep, that\'s what I thought. Thanks for confirming it.', direct);
-						} else {
+					if (!fromBot)
+						if (what && what[0] == object)
+							if (direct)
+								channel.say('Yep, that\'s what I thought. Thanks for confirming it.', user);
+						else
 							// XXX "that's one of the alternatives, sure..."
-							this.targettedSay(user.name, channel, "But " + subject + " " + database + " '" + what + "'...", direct);
-						}
-					}
+							if (direct)
+								channel.say("But " + subject + " " + database + " '" + what + "'...", user);
 					return false; // failed to update database
 				} else {
 					self.debug("Learning that " + subject + " " + database + " also '" + object + "'.");
 					self.factoids[database][subject] += "|" + object;
 				}
 				if (!fromBot)
-					this.targettedSay(user.name, channel, 'ok', direct);
+					if (direct)
+						channel.say('ok', user);
 				if (self['researchNotes'][subject.toLowerCase()]) {
 					var queue = self['researchNotes'][subject.toLowerCase()];
 					for each (entry in queue) {
@@ -365,9 +368,10 @@ var infobot = {
 
 		giveFactoid: function(self, user, time, channel, database, subject, direct, target) {
 			if (direct || this.allowed(user.name, channel.name, 'Help')) {
-				if ((new RegExp("^" + self.name + "$", "i")).test(target)) {
-					this.targettedSay(user.name, channel, 'Oh, yeah, great idea, get me to talk to myself.', direct);
-				} else {
+				if ((new RegExp("^" + self.name + "$", "i")).test(target))
+					if (direct)
+						channel.say('Oh, yeah, great idea, get me to talk to myself.', user);
+				else {
 					if (subject == 'you') {
 						// first, skip some words that are handled by other commonly-used modules
 						// in particular, 'who are you' is handled by Greeting.bm
@@ -391,15 +395,14 @@ var infobot = {
 			if (is || are) {
 				if (self.factoids['is'][is]) {
 					var what = self.factoids['is'][is].split('|').join("\' or \'");
-					this.targettedSay(user.name, channel, is + " is '" + what + "'.", true);
+					channel.say(is + " is '" + what + "'.", user);
 				}
 				if (self.factoids['are'][are]) {
 					var what = self.factoids['are'][are].split('|').join("\' or \'");
-					this.targettedSay(user.name, channel, are + " are '" + what + "'.", true);
+					channel.say(are + " are '" + what + "'.", user);
 				}
-			} else {
-				this.targettedSay(user.name, channel, "I have no record of anything called '" + subject + "'.", true);
-			}
+			} else
+				channel.say("I have no record of anything called '" + subject + "'.", user);
 		},
 
 		scheduleNoIdea: function(self, user, channel, database, subject, direct, propagated) { // XXX schedule?
@@ -450,7 +453,7 @@ var infobot = {
 						// pick a 'random' prefix
 						var prefix = self['prefixes'][time % self['prefixes'].length];
 						if (who.toLowerCase() == subject.toLowerCase())
-							answer = prefix + "you are " + $answer;
+							answer = prefix + "you are " + answer;
 						else
 							answer = prefix + subject + " " + database + " " + answer;
 						if (friend)
@@ -489,7 +492,7 @@ var infobot = {
 				var database;
 				[database, subject] = this.findFactoid(self, database, subject);
 				if (!factoids[database][subject]) {
-					this.targettedSay(userName, channel, "Er, I don't know about this $subject thingy...", direct);
+					channel.say("Er, I don't know about this " + subject + " thingy...", user);
 					return;
 				}
 				self.debug("Editing the " + subject + " entry.");
@@ -507,7 +510,8 @@ var infobot = {
 					output.push(factoid);
 				}
 				factoids[database][subject] = output.join('|');
-				this.targettedSay(userName, channel, 'ok', direct);
+				if (direct)
+					channel.say('ok', user);
 				self['edits']++;
 			}
 		},
@@ -523,11 +527,13 @@ var infobot = {
 						count++;
 					}
 				}
-				if ($count) {
-					this.targettedSay(userName, channel, "I've forgotten what I knew about '$subject'.", direct);
+				if (count) {
+					if (direct)
+						channel.say("I've forgotten what I knew about '" + subject + "'.", user);
 					self['edits']++;
 				} else
-					this.targettedSay(userName, channel, "I never knew anything about '$subject' in the first place!", direct);
+					if (direct)
+						channel.say("I never knew anything about '" + subject + "' in the first place!", user);
 			}
 		},
 
@@ -542,7 +548,7 @@ var infobot = {
 			if (!self['researchNotes'][subject])
 				self['researchNotes'][subject] = [];
 			else {
-				//entry: foreach my $entry (@{$self->{'researchNotes'}->{lc($subject)}}) { // XXX Why is there a label?
+				// XXX Why was this labeled "entry"?
 				for each (entry in self['researchNotes'][subject.toLowerCase()]) {
 					[eventE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = entry;
 					if (typeE == 'QUERY') {
@@ -555,12 +561,12 @@ var infobot = {
 					}
 				}
 			}
-			// remember to tell these people about $subject if we ever find out about it:
+			// remember to tell these people about subject if we ever find out about it:
 			var entry = [user, channel, 'QUERY', database, subject, target, direct, visitedAliases, time];
 			self['researchNotes'][subject.toLowerCase()].push(entry);
 			var who = target ? target : user.name;
 			if (!asked) {
-				// not yet asked, so ask each bot about $subject
+				// not yet asked, so ask each bot about subject
 				for each (bot in self['friendBots']) {
 					if (bot == user.name)
 						continue;
@@ -576,8 +582,8 @@ var infobot = {
 			self['interbots']++;
 			if (!this.setFactoid(self, user, channel, 0, subject, database, 0, object, 1, 1)
 				&& self['researchNotes'][subject.toLowerCase()]) {
-				// we didn't believe $event->{'from'}, but we might as well
-				// tell any users that were wondering.
+				// we didn't believe user, but we might as well tell any users
+				// that were wondering.
 				for each (entry in self['researchNotes'][subject.toLowerCase()]) {
 					[userE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = entry;
 					if (typeE == 'QUERY')
@@ -655,29 +661,24 @@ var infobot = {
 
 		factoidSay: function(self, user, channel, how, what, direct, target) { // XXX self.directEmote?
 			if (target) { // XXX this needs to check if the user is "known"
-				this.targettedSay(user.name, channel, "told " + target, true);
+				channel.say("told " + target, user);
 				if (how == 'me')
-					self.directEmote(target, channel, what);
+					user.emote(what); // XXX should be target.emote
 				else if (what.length)
-					user.say(target + " wanted you to know: " + what); // This should be target.say
+					user.say(target + " wanted you to know: " + what); // XXX should be target.say
 			} else if (how == 'me')
-				self.emote(event, what);
+				channel.emote(what);
 			else {
 				if (!channel.name.length || what.length < self['maxInChannel'])
-					this.targettedSay(user.name, channel, what, true);
+					channel.say(what, user);
 				else {
 					if (direct) {
-						this.targettedSay(user.name, channel, what.substr(0, self['maxInChannel']) + '... (rest /msged)' , true);
+						channel.say(what.substr(0, self['maxInChannel']) + '... (rest /msged)' , user);
 						user.say(what);
 					} else
-						this.targettedSay(user.name, channel, whatsubstr(0, self['maxInChannel']) + '... (there is more; ask me in a /msg)' , true);
+						channel.say(whatsubstr(0, self['maxInChannel']) + '... (there is more; ask me in a /msg)' , user);
 				}
 			}
-		},
-
-		targettedSay: function(userName, channel, message, direct) {
-			if (direct && message.length)
-				channel.say(userName + ": " + message);
 		},
 
 		countFactoids: function(self) {
@@ -704,11 +705,13 @@ var infobot = {
 
 		noIdea: function(self, userName, channel, database, subject, direct) {
 			if (subject.toLowerCase() == userName.toLowerCase())
-				this.targettedSay(userName, channel, "Sorry, I've no idea who you are.", direct);
+				if (direct)
+					channel.say("Sorry, I've no idea who you are.", user);
 			else {
 				if (!database)
 					database = 'might be';
-				this.targettedSay(userName, channel, "Sorry, I've no idea what '" + subject + "' " + database + ".", direct);
+				if (direct)
+					channel.say("Sorry, I've no idea what '" + subject + "' " + database + ".", user);
 			}
 		}
 	}]

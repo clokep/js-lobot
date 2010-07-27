@@ -104,10 +104,6 @@ Lobot.prototype = {
 		});
 	},
 	
-	directEmote: function(target, channel, what) {
-		this.dump("***" + target + " " + channel.name + " " + what + "***");
-	},
-	
 	shutdown: function() {
 		this.executeModuleFunction("shutdown");
 	}
@@ -121,8 +117,16 @@ function Channel(self, name) {
 	this.self = self;
 };
 Channel.prototype = {
-	say: function(str) {
-		this.self.dump(">> (" + this.name + ") <u>" + str + "</u>");
+	say: function(message, user) { // XXX check message length so we don't send empty stuff
+		this.self.debug(message);
+		if (user)
+			this.self.dump(">> (" + this.name + ") <u>" + user.name + ": " + message + "</u>");
+		else
+			this.self.dump(">> (" + this.name + ") <u>" + message + "</u>");
+	},
+	emote: function(what) {
+		// XXX should send /me what
+		this.self.dump("<u>*** " + this.self.name + " " + what + "***</u>");
 	},
 
 	join: function() {}
@@ -135,7 +139,11 @@ function User(self, name) {
 }
 User.prototype = {
 	say: function(message) {
-		this.self.dump(">> " + this.name + ": <b>" + message + "</b>");
+		this.self.dump(">> (" + this.name + ") <b>" + message + "</b>");
+	},
+	emote: function(what) {
+		// XXX should send /msg /me what
+		this.self.dump("(" + this.name + ") <b>***" + what + "***</b>");
 	}
 }
 
@@ -221,5 +229,17 @@ bot.told(testUser, new Date(), testChannel, "tell roger about me!");
 bot.told(testUser, new Date(), testChannel, "John_Doe is awesome!!");
 bot.told(testUser, new Date(), testChannel, "tell roger about me!");
 bot.told(testUser, new Date(), testChannel, "what is food?");
+bot.told(testUser, new Date(), testChannel, "no, food is good.");
+bot.told(testUser, new Date(), testChannel, "what is food");
+bot.told(testUser, new Date(), testChannel, "food is also healthy");
+bot.told(testUser, new Date(), testChannel, "what is food!?");
+bot.told(testUser, new Date(), testChannel, "what is unknown!?");
+bot.told(testUser, new Date(), testChannel, "test is <reply>$who is dumb");
+bot.told(testUser, new Date(), testChannel, "what is test?");
+bot.told(testUser, new Date(), testChannel, "snack is <alias>food");
+bot.told(testUser, new Date(), testChannel, "who is snack");
+
+bot.told(testUser, new Date(), testChannel, "kick is <action>kicks you!");
+bot.told(testUser, new Date(), testChannel, "what is kick");
 
 bot.debug("Factoids: " + JSON.stringify(bot.factoids));
