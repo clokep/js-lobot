@@ -410,7 +410,7 @@ var infobot = {
 			if (propagated)
 				self.schedule(user, channel, self['noIdeaDelay'], 1, 'noIdea', database, subject, direct, propagated);
 			else
-				this.noIdea(self, user.name, channel, database, subject, direct);
+				this.noIdea(self, user, channel, database, subject, direct);
 		},
 
 		getFactoid: function(self, user, time, channel, originalDatabase, subject, target, direct, visitedAliases, friend) { // self.research
@@ -653,7 +653,7 @@ var infobot = {
 				// on if this was triggered by a tell, directE = direct,
 				//visitedAliasesE is opaque, and timeE is opaque.
 				if (typeE != 'OLD')
-					this.noIdea(self, user.name, channel, database, subject, direct);
+					this.noIdea(self, user, channel, database, subject, direct);
 			} else
 				self.scheduled(event, data); // XXX What do we do here?
 		},
@@ -704,8 +704,8 @@ var infobot = {
 			return false;
 		},
 
-		noIdea: function(self, userName, channel, database, subject, direct) {
-			if (subject.toLowerCase() == userName.toLowerCase())
+		noIdea: function(self, user, channel, database, subject, direct) {
+			if (subject.toLowerCase() == user.name.toLowerCase())
 				if (direct)
 					channel.say("Sorry, I've no idea who you are.", user);
 			else {
