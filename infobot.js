@@ -52,7 +52,7 @@ var infobot = {
 			self['pruneDelay'] = 120; // how frequently to look through the research notes and remove expired items
 			self['queryTimeToLive'] = 600; // queries can be remembered up to ten minutes by default
 			self['dunnoTimeToLive'] = 604800; // DUNNO queries can be remembered up to a week by default
-			self['noIdeaDelay'] = 2; // how long to wait before admitting lack of knowledge
+			self['noIdeaDelay'] = 2000; // how long to wait before admitting lack of knowledge
 			self['questions'] = 0; // how many questions there have been since the last load
 			self['edits'] = 0; // how many edits (learning, editing, forgetting) there have been since the last load
 			self['interbots'] = 0; // how many times we have spoken with other bots
@@ -381,9 +381,10 @@ var infobot = {
 					}
 					self['questions']++;
 					[how, what, propagated] = this.getFactoid(self, user, time, channel, database, subject, target, direct);
-					if (!how)
+					if (!how) {
+						self.debug("NO IDEA SCHEDULED!");
 						this.scheduleNoIdea(self, user, channel, database, subject, direct, propagated); // XXX Check this
-					else {
+					} else {
 						self.debug("Telling " + user.name + " about " + subject + ".");
 						this.factoidSay(self, user, channel, how, what, direct, target);
 					}
@@ -407,9 +408,9 @@ var infobot = {
 				self.say("I have no record of anything called '" + subject + "'.", user, channel);
 		},
 
-		scheduleNoIdea: function(self, user, channel, database, subject, direct, propagated) { // XXX schedule?
+		scheduleNoIdea: function(self, user, channel, database, subject, direct, propagated) {
 			if (propagated)
-				self.schedule(user, channel, self['noIdeaDelay'], 1, 'noIdea', database, subject, direct, propagated);
+				self.schedule(this, user, time, channel, self['noIdeaDelay'], 1, this.scheduled, 'noIdea', database, subject, direct, propagated);
 			else
 				this.noIdea(self, user, channel, database, subject, direct);
 		},
@@ -634,7 +635,9 @@ var infobot = {
 			return count;
 		},
 
-		scheduled: function(self, user, channel, time, data) {
+		scheduled: function(self, user, time, channel, waitTime, repeatTimes/*, data*/) {
+			self.debug("SCHEDULED RAN");
+			var data = Array.prototype.slice.call(arguments).slice(6);
 			if (data[0] == 'pruneInfobot') {
 				var now = time;
 				for (key in self['researchNotes']) {
@@ -652,23 +655,23 @@ var infobot = {
 						delete self['researchNotes'][key];
 				}
 			} else if (data[0] == 'noIdea') {
-				[_null, database, subject, direct, propagated] = data;
+				var [_null, database, subject, direct, propagated] = data;
 				delete _null;
-				[userE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = propagated;
+				var [userE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = propagated;
 				// in theory, userE = user, channelE = channel,
 				// databaseE = database, subjectE = subject, targetE depends
 				// on if this was triggered by a tell, directE = direct,
 				// visitedAliasesE is opaque, and timeE is opaque.
 				if (typeE != 'OLD')
 					this.noIdea(self, user, channel, database, subject, direct);
-			} else
-				self.scheduled(event, data); // XXX What do we do here?
+			}/* else
+				self.scheduled(event, data); // XXX What do we do here?*/
 		},
 
 		// internal helper routines
 
 		factoidSay: function(self, user, channel, how, what, direct, targetName) {
-			if (targetName)// XXX this needs to check if the user is "known"
+			if (targetName)
 				if (target = self.getUser(targetName)) {
 					self.say("told " + target.name, user, channel);
 					if (how == 'me')

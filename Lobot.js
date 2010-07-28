@@ -99,6 +99,17 @@ Lobot.prototype = {
 				module[fun](this);
 		});
 	},
+	
+	schedule: function(self, user, time, channel, waitTime, repeatTimes, fun /*, data*/) {
+		var data = Array.prototype.slice.call(arguments).slice(7);
+		// _self is the Lobot instance, self should be a reference back to the caller
+		var _self = this;
+		setTimeout(function() {
+			[self, user, time, channel, waitTime, repeatTimes, fun, data] = fun.call(self, _self, user, time, channel, waitTime, repeatTimes, data);
+			if (repeatTimes > 0 || repeatTimes < 0) // < 0 is forever! // XXX we could get rid of this, or maybe we shouldn't allow the user to edit repeatTimes?
+				_self.schedule(self, user, time, channel, waitTime, --repeatTimes, fun, data);
+		}, waitTime);
+	},
 
 	startup: function() {
 		this.executeModuleFunction("startup");
@@ -269,6 +280,13 @@ bot.addUser(testUser2);
 var testUser3 = new User(bot, "instantbot");
 bot.addUser(testUser3);
 
+var testscheduler = function(self, user, time, channel, waitTime, repeatTimes, fun, data) {
+	self.debug(this.name);
+	self.debug("Scheduled test: " + repeatTimes + " " + ((repeatTimes == 1) ? "is" : "are") + " left");
+	return [this, user, time, channel, waitTime, repeatTimes, testscheduler, data];
+}
+//bot.schedule(testUser, testUser, new Date(), testChannel, 3000, 2, testscheduler);
+
 bot.told(testUser, new Date(), testChannel, "Hello!");
 bot.told(testUser, new Date(), testChannel, "This is a test!");
 bot.told(testUser, new Date(), testChannel, "Another test!");
@@ -303,8 +321,9 @@ bot.told(testUser, new Date(), null, "status"); // Direct message
 
 bot.told(testUser3, new Date(), null, ":INFOBOT:QUERY <target> subject");
 bot.told(testUser3, new Date(), null, ":INFOBOT:QUERY <roger> food");
+bot.told(testUser2, new Date(), null, "subject is a test :)");
 
-bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> subject");
 bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> food");
+bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> subject2");
 
 bot.debug("Factoids: " + JSON.stringify(bot.factoids));
