@@ -1,12 +1,18 @@
 function Lobot(name, modulePacks) {
+	// Lobot framework
 	this.name = name;
 	this.modules = [];
 	this.modulePacks = [{name: "core", author: "Patrick Cloke", version: 0.1}];
 	this.addModulePacks(modulePacks);
 	this.startup();
 	
+	// Keep track of "stuff"
 	this.users = [new User(this, this.name)];
 	this.channels = [];
+	this.accounts = [];
+	
+	// Some configuration options
+	this['maxInChannel'] = 15; // beyond this answers are /msged
 };
 Lobot.prototype = {
 	/*
@@ -16,7 +22,7 @@ Lobot.prototype = {
 		document.getElementById("console").innerHTML += str + "<br>";
 	},
 	debug: function (str) {
-		this.dump("[<i>" + str + "</i>]");
+		this.dump("<span style=\"color: grey;\">[<i>" + str + "</i>]</span>");
 	},
 
 	addModulePacks: function(modulePacks) {
@@ -48,6 +54,16 @@ Lobot.prototype = {
 					//this.dump(this.modulePacks[index].modules[index2].parent);
 				}, this);
 		}, this);*/
+	},
+	
+	addUser: function(user) {
+		this.users[user.name] = user;
+	},
+	
+	addChannel: function(channel) {
+		this.channels[channel.name] = channel;
+		channel.users = this.users; // XXX for testing
+		// Find all users in this channel and add them
 	},
 	
 	/*
@@ -103,6 +119,14 @@ Lobot.prototype = {
 		});
 	},
 	
+	// Automatically choose who to talk to based on whether a user/channel exists or not
+	say: function(message, user, channel, dontAutoMsg) {
+		if (user && !channel)
+			user.say(message);
+		else
+			channel.say(message, user, dontAutoMsg);
+	},
+	
 	shutdown: function() {
 		this.executeModuleFunction("shutdown");
 	}
@@ -116,11 +140,21 @@ function Channel(self, name) {
 	this.self = self;
 };
 Channel.prototype = {
-	say: function(message, user) { // XXX check message length so we don't send empty stuff
+	say: function(message, user, dontAutoMsg) { // XXX check message length so we don't send empty stuff
+		if (user && message.length > this.self['maxInChannel']) {
+			if (!dontAutoMsg) // Send the user the full message
+				user.say(message);
+			message = message.substr(0, this.self['maxInChannel']);
+			if (!dontAutoMsg)
+				message += '... (rest /msged)';
+			else
+				message += '... (there is more; ask me in a /msg)';
+		}
+		
 		if (user)
-			this.self.dump(this.name + " >> <u>" + user.name + ": " + message + "</u>");
+			this.self.dump(this.name + " << <u>" + user.name + ": " + message + "</u>");
 		else
-			this.self.dump(this.name + " >> <u>" + message + "</u>");
+			this.self.dump(this.name + " << <u>" + message + "</u>");
 	},
 	emote: function(what, user) {
 		// XXX should send /me what
@@ -140,7 +174,7 @@ function User(self, name) {
 }
 User.prototype = {
 	say: function(message) {
-		this.self.dump(this.name + " >> <b>" + message + "</b>");
+		this.self.dump(this.name + " << <b>" + message + "</b>");
 	},
 	emote: function(what) {
 		// XXX should send /msg /me what
@@ -216,8 +250,14 @@ var logger = {
 
 // Initiate with a constructor
 var bot = new Lobot("Testbot", [/*helloWorld, logger,*/ infobot]);
+// Set up users and channels
 var testChannel = new Channel(bot, "#blah");
+bot.addChannel(testChannel);
 var testUser = new User(bot, "John_Doe");
+var testUser2 = new User(bot, "roger");
+bot.addUser(testUser);
+bot.addUser(testUser2);
+
 bot.told(testUser, new Date(), testChannel, "Hello!");
 bot.told(testUser, new Date(), testChannel, "This is a test!");
 bot.told(testUser, new Date(), testChannel, "Another test!");
@@ -240,9 +280,11 @@ bot.told(testUser, new Date(), testChannel, "what is test?");
 bot.told(testUser, new Date(), testChannel, "snack is <alias>food");
 bot.told(testUser, new Date(), testChannel, "who is snack");
 
-bot.told(testUser, new Date(), testChannel, "kick is <action>kicks you!");
+bot.told(testUser, new Date(), testChannel, "kick is <action>kicks $who!");
 bot.told(testUser, new Date(), testChannel, "what is kick");
 
 bot.told(testUser, new Date(), testChannel, "status");
+
+bot.told(testUser, new Date(), null, "status"); // Direct message
 
 bot.debug("Factoids: " + JSON.stringify(bot.factoids));
