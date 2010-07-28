@@ -331,7 +331,12 @@ bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> subject2");*/
 
 bot.told(testUser, new Date(), null, "what is food?");
 bot.told(testUser, new Date(), null, "forget food");
-bot.told(testUser, new Date(), null, "food?");
+bot.told(testUser, new Date(), null, "forget food");
+bot.told(testUser, new Date(), null, "what is food?");
+
+
+bot.told(testUser, new Date(), null, "test1 is here");
+bot.told(testUser, new Date(), null, "test1 =~ s/ere/air/");
 
 bot.debug("Factoids: " + JSON.stringify(bot.factoids));
 

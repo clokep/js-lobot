@@ -486,8 +486,8 @@ var infobot = {
 			return [database, subject];
 		},
 
-		editFactoid: function(self, userName, channel, subject, search, replace, global, caseInsensitive, direct) { // XXX this probably breaks
-			if (direct || this.allowed(userName, channel.name, 'Edit')) {
+		editFactoid: function(self, user, channel, subject, search, replace, global, caseInsensitive, direct) { // XXX this probably breaks
+			if (direct || this.allowed(user.name, channel.name, 'Edit')) {
 				var database;
 				[database, subject] = this.findFactoid(self, database, subject);
 				if (!this.factoidExists(self, database, subject)) {
@@ -497,15 +497,10 @@ var infobot = {
 				self.debug("Editing the " + subject + " entry.");
 				var output = [];
 				for each (factoid in self.factoids[database][subject].split('|')) {
-					search = this.sanitizeRegexp(search);
-					if (global && caseInsensitive)
-						factoid = factoid.replace((new RegExp(search, "gi"), replace)); // XXX Check these
-					else if (global)
-						factoid = factoid.replace((new RegExp(search, "g"), replace));
-					else if (caseInsensitive)
-						factoid = factoid.replace((new RegExp(search, "i"), replace));
-					else
-						factoid = factoid.replace((new RegExp(search), replace));
+					var flags = global ? "g" : "";
+					flags += caseInsensitive ? "i" : "";
+					search = XRegExp.isRegExp(new XRegExp(search, flags)) ? (new XRegExp(search, flags)) : search;
+					factoid = factoid.replace(search, replace);
 					output.push(factoid);
 				}
 				self.factoids[database][subject] = output.join('|');
@@ -515,14 +510,13 @@ var infobot = {
 			}
 		},
 
-		forgetFactoid: function(self, userName, channel, subject, direct) {
-			self.debug(channel.name);
+		forgetFactoid: function(self, user, channel, subject, direct) {
 			if (direct || this.allowed(userName, channel, 'Edit')) {
 				var count = 0;
 				var database;
 				for each (db  in ['is', 'are']) {
 					[database, subject] = this.findFactoid(self, db, subject);
-					if (self.factoidExists(self, database, subject)) {
+					if (this.factoidExists(self, database, subject)) {
 						delete self.factoids[database][subject];
 						count++;
 					}
