@@ -12,7 +12,7 @@ function Lobot(name, modulePacks) {
 	this.accounts = [];
 	
 	// Some configuration options
-	this['maxInChannel'] = 15; // beyond this answers are /msged
+	this['maxInChannel'] = 200; // beyond this answers are /msged
 };
 Lobot.prototype = {
 	/*
@@ -58,6 +58,15 @@ Lobot.prototype = {
 	
 	addUser: function(user) {
 		this.users[user.name] = user;
+	},
+	
+	getUser: function(userName) {
+		if (this.users[userName])
+			return this.users[userName];
+		else // Try to find a case insensitive version and return it
+			for (var key in this.users)
+				if (key.toLowerCase() == userName.toLowerCase())
+					return this.users[key];
 	},
 	
 	addChannel: function(channel) {
@@ -159,9 +168,9 @@ Channel.prototype = {
 	emote: function(what, user) {
 		// XXX should send /me what
 		if (user)
-			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + " " + user.name + "</u>***");
+			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + " " + user.name + "</u> ***");
 		else
-			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + "</u>***");
+			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + "</u> ***");
 	},
 
 	join: function() {}
@@ -178,7 +187,7 @@ User.prototype = {
 	},
 	emote: function(what) {
 		// XXX should send /msg /me what
-		this.self.dump(this.name + " <b>***" + what + "***</b>");
+		this.self.dump(this.name + " <b>*** " + what + " ***</b>");
 	}
 }
 
@@ -254,9 +263,11 @@ var bot = new Lobot("Testbot", [/*helloWorld, logger,*/ infobot]);
 var testChannel = new Channel(bot, "#blah");
 bot.addChannel(testChannel);
 var testUser = new User(bot, "John_Doe");
-var testUser2 = new User(bot, "roger");
 bot.addUser(testUser);
+var testUser2 = new User(bot, "roger");
 bot.addUser(testUser2);
+var testUser3 = new User(bot, "instantbot");
+bot.addUser(testUser3);
 
 bot.told(testUser, new Date(), testChannel, "Hello!");
 bot.told(testUser, new Date(), testChannel, "This is a test!");
@@ -269,6 +280,7 @@ bot.told(testUser, new Date(), testChannel, "geez, FOOD is BAR");
 bot.told(testUser, new Date(), testChannel, "tell roger about me!");
 bot.told(testUser, new Date(), testChannel, "John_Doe is awesome!!");
 bot.told(testUser, new Date(), testChannel, "tell roger about me!");
+bot.told(testUser, new Date(), testChannel, "tell roger2 about me!"); // A user that doesn't exist
 bot.told(testUser, new Date(), testChannel, "what is food?");
 bot.told(testUser, new Date(), testChannel, "no, food is good.");
 bot.told(testUser, new Date(), testChannel, "what is food");
@@ -282,9 +294,17 @@ bot.told(testUser, new Date(), testChannel, "who is snack");
 
 bot.told(testUser, new Date(), testChannel, "kick is <action>kicks $who!");
 bot.told(testUser, new Date(), testChannel, "what is kick");
+bot.told(testUser, new Date(), testChannel, "tell roger what is kick");
+bot.told(testUser, new Date(), testChannel, "tell roger2 what is kick");
 
 bot.told(testUser, new Date(), testChannel, "status");
 
 bot.told(testUser, new Date(), null, "status"); // Direct message
+
+bot.told(testUser3, new Date(), null, ":INFOBOT:QUERY <target> subject");
+bot.told(testUser3, new Date(), null, ":INFOBOT:QUERY <roger> food");
+
+bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> subject");
+bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> food");
 
 bot.debug("Factoids: " + JSON.stringify(bot.factoids));

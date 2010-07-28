@@ -48,7 +48,7 @@ var infobot = {
 			self['prefixes'] = ['', 'I have heard that ', '', 'Maybe ', 'I seem to recall that ', '', 'iirc, ', '',
 								'Was it not... er, someone, who said: ', '', 'Well, ', 'um... ', 'Oh, I know this one! ',
 								'', 'everyone knows that! ', '', 'hmm... I think ', 'well, duh. '];
-			self['researchNotes'] = [];
+			self['researchNotes'] = {};
 			self['pruneDelay'] = 120; // how frequently to look through the research notes and remove expired items
 			self['queryTimeToLive'] = 600; // queries can be remembered up to ten minutes by default
 			self['dunnoTimeToLive'] = 604800; // DUNNO queries can be remembered up to a week by default
@@ -83,13 +83,16 @@ var infobot = {
 							+ " last reload, I've been asked " + questions + ","
 							+ " performed " + edits + ", and spoken with other "
 							+ "bots " + interbots + ".", user, channel);
-			} else if (!channel.name.length && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) { 
+			} else if (!channel && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) { 
+				self.debug("@1");
 				if (user.name != self.name)
-					this.receivedDunno(self, user, channel, matches[1], matches[2]);
-			} else if (!channel.name.length && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage))) {
+					this.receivedDunno(self, user, time, channel, matches[1], matches[2]);
+			} else if (!channel && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage))) {
+				self.debug("@2");
 				if (user.name != self.name)
 					this.receivedQuery(self, user, channel, matches[2], matches[1]);
-			} else if (!channel.name.length && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage))) {
+			} else if (!channel && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage))) {
+				self.debug("@3");
 				if (user.name != self.name)
 					this.receivedReply(self, user, channel, matches[3], matches[2], matches[1], matches[4]);
 			} else if (matches = /^\s*literal\s+(.+?)\s*$/.exec(rawMessage))
@@ -549,7 +552,7 @@ var infobot = {
 			else {
 				// XXX Why was this labeled "entry"?
 				for each (entry in self['researchNotes'][subject.toLowerCase()]) {
-					[eventE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = entry;
+					[userE, timeE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE] = entry;
 					if (typeE == 'QUERY') {
 						asked++; // at least one bot was already asked quite recently
 						if ((targetE && target.toLowerCase() == targetE.toLowerCase()) || // XXX Might have a bug in infobot.bm
@@ -561,7 +564,9 @@ var infobot = {
 				}
 			}
 			// remember to tell these people about subject if we ever find out about it:
-			var entry = [user, channel, 'QUERY', database, subject, target, direct, visitedAliases, time];
+			var entry = [user, time, channel, 'QUERY', database, subject, target, direct, visitedAliases];
+			if (!self['researchNotes'][subject.toLowerCase()])
+				self['researchNotes'][subject.toLowerCase()] = [];
 			self['researchNotes'][subject.toLowerCase()].push(entry);
 			var who = target ? target : user.name;
 			if (!asked) {
@@ -584,7 +589,7 @@ var infobot = {
 				// we didn't believe user, but we might as well tell any users
 				// that were wondering.
 				for each (entry in self['researchNotes'][subject.toLowerCase()]) {
-					[userE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = entry;
+					[userE, timeE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE] = entry;
 					if (typeE == 'QUERY')
 						self.factoidSay(userE.name, channelE, 'msg', "According to " + userE.name + ", " + subject + " " + database + " '" + object + "'.", directE, targetE);
 					else if (typeE == 'DUNNO') {
@@ -598,7 +603,7 @@ var infobot = {
 
 		receivedQuery: function(self, user, channel, subject, target) {
 			self['interbots']++;
-			if (!this.tellBot(user, channel, subject, target))
+			if (!this.tellBot(self, user, channel, subject, target))
 				// in the spirit of embrace-and-extend, we're going to say that
 				// :INFOBOT:DUNNO means "I don't know, but if you ever find
 				// out, please tell me".
@@ -607,10 +612,13 @@ var infobot = {
 
 		receivedDunno: function(self, user, channel, time, target, subject) {
 			self['interbots']++;
-			if (!this.tellBot(event, subject, target))
+			if (!this.tellBot(self, user, channel, subject, target))
 				// store the request
-				// XXX this will probably break, we never check if self['researchNotes'] exists
-				self['researchNotes'][subject.toLowerCase()].push([event, 'DUNNO', null, _$1, target, 0, {}, time]); // What is the $1 referring to
+				var entry = [user, time, channel, 'DUNNO', null, subject, target, false, {}];
+				if (!self['researchNotes'][subject.toLowerCase()])
+					self['researchNotes'][subject.toLowerCase()] = [entry];
+				else
+					self['researchNotes'][subject.toLowerCase()].push(entry);
 		},
 
 		tellBot: function(self, user, channel, subject, target) {
@@ -618,8 +626,8 @@ var infobot = {
 			var database;
 			for each (db in ['is', 'are']) {
 				[database, subject] = this.findFactoid(self, db, subject);
-				if (factoids[database][subject]) {
-					user.say(":INFOBOT:REPLY <" + target + "> " + subject + " =" + database + "=> " + factoids[database][subject]);
+				if (this.factoidExists(self, database, subject)) {
+					user.say(":INFOBOT:REPLY <" + target + "> " + subject + " =" + database + "=> " + self.factoids[database][subject]);
 					count++;
 				}
 			}
@@ -632,7 +640,7 @@ var infobot = {
 				for (key in self['researchNotes']) {
 					var _new = [];
 					for each (entry in self['researchNotes'][key]) {
-						var [eventE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE, timeE] = entry;
+						var [userE, timeE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE] = entry;
 						if ((typeE == 'QUERY' && (now - timeE) < self['queryTimeToLive']) ||
 							(typeE == 'DUNNO' && (now - timeE) < self['dunnoTimeToLive'])) {
 							_new.pushpush(entry);
@@ -659,14 +667,17 @@ var infobot = {
 
 		// internal helper routines
 
-		factoidSay: function(self, user, channel, how, what, direct, target) { // XXX self.directEmote?
-			if (target) { // XXX this needs to check if the user is "known"
-				self.say("told " + target, user, channel);
-				if (how == 'me')
-					user.emote(what); // XXX should be target.emote
-				else if (what.length)
-					user.say(target + " wanted you to know: " + what); // XXX should be target.say
-			} else if (how == 'me')
+		factoidSay: function(self, user, channel, how, what, direct, targetName) {
+			if (targetName)// XXX this needs to check if the user is "known"
+				if (target = self.getUser(targetName)) {
+					self.say("told " + target.name, user, channel);
+					if (how == 'me')
+						target.emote(what);
+					else if (what.length)
+						target.say(user.name + " wanted you to know: " + what);
+				} else
+					self.say("Sorry, I've no idea who " + targetName + " is.", user, channel);
+			else if (how == 'me')
 				channel.emote(what);
 			else
 				if (direct)
