@@ -84,7 +84,8 @@ Modules
 			topic: string
 	In a module "this" refers to the module, "self" refers to Lobot instance, "parent" refers to the modulePack
 	
-Include jQuery? Prototype?
+Include
+	XRegExp
 
 Module Ideas:
 	Auth
