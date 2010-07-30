@@ -11,11 +11,10 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is the Instantbird messenging client, released
- * 2010.
+ * The Original Code is the Lobot, released 2010.
  *
  * The Initial Developer of the Original Code is
- * Florian QUEZE <florian@instantbird.org>.
+ * Patrick Cloke <clokep@gmail.com>.
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
  *
@@ -35,7 +34,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://app/modules/jsProtoHelper.jsm");
 Components.utils.import("resource://lobot/modules/lobot.jsm");
 
