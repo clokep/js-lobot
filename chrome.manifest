@@ -1,5 +1,3 @@
-component	{a04b520c-0a0a-441e-8dab-6adc5b7a7587}	components/lobotProtocol.js
-contract	@instantbird.org/purple/lobot;1		{a04b520c-0a0a-441e-8dab-6adc5b7a7587}
-category	js-protocol-plugin	@instantbird.org/purple/lobot;1		@instantbird.org/purple/lobot;1
-
-resource	lobot	/
+content		lobot	chrome/content
+skin		lobot	classic/1.0		chrome/skin/
+resource	lobot	modules/

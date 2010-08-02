@@ -52,7 +52,7 @@
 
 		<!-- Internal References //-->
 		<!--<em:aboutURL>chrome://lobot/content/about.xul</em:aboutURL>//-->
-		<!--<em:iconURL>chrome://lobot/content/lobot.png</em:iconURL>//-->
+		<em:iconURL>chrome://lobot/content/lobot.png</em:iconURL>
 		<!--<em:optionsURL>chrome://lobot/content/options.xul</em:optionsURL>//-->
 
 		<!-- Target Applications //-->

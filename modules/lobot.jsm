@@ -34,7 +34,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var EXPORTED_SYMBOLS = ["Lobot", "helloWorld", "logger"];
+var EXPORTED_SYMBOLS = ["Lobot", "User", "Channel", "helloWorld", "logger"];
 
 function Lobot(name, modulePacks) {
 	// Lobot framework
@@ -263,7 +263,8 @@ var helloWorld = {
 				//self.dump(user + " " + time + " " + JSON.stringify(message));
 				return;
 			},
-			shutdown: function() {},
+			shutdown: function() {
+			},
 			help: {
 				"hi": "Testing the help system",
 				"bye": "Testing the help system again",

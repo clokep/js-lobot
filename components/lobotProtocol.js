@@ -34,8 +34,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://app/modules/jsProtoHelper.jsm");
-Components.utils.import("resource://lobot/modules/lobot.jsm");
+Components.utils.import("resource://lobot/lobot.jsm");
 
 const Ci = Components.interfaces;
 
@@ -43,14 +44,13 @@ function Conversation(aAccount) {
   this._init(aAccount);
 }
 Conversation.prototype = {
-
-  get name() "Lobot",
+  get name() "Lobot"
 };
 Conversation.prototype.__proto__ = GenericConversationPrototype;
 
 function Account(aProtoInstance, aKey, aName) {
   this._init(aProtoInstance, aKey, aName);
-  this._lobot = new Lobot();
+  //this._lobot = new Lobot();
 }
 Account.prototype = {
 
