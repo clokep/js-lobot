@@ -1,4 +1,4 @@
-/* ***** BEGIN LICENSE BLOCK *****
+{/* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -33,6 +33,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+}
 
 // XXX This should all be in private scope
 function dump(aMessage) {
@@ -49,7 +50,7 @@ function Lobot(modulePacks) {
 	this.addModulePacks(modulePacks);
 
 	this.startup();
-	
+
 	// Keep track of "stuff"
 	this.users = [new Buddy(this, this.name)];
 	this.conversations = [];
@@ -104,9 +105,8 @@ Lobot.prototype = {
 	registerObservers: function() {
 		let observerService = Components.classes["@mozilla.org/observer-service;1"]
 									 .getService(Components.interfaces.nsIObserverService);
-		
+
 		let self = this;
-		
 		self.globalNotifications.forEach(function (aTopic) {
 			observerService.addObserver(self, aTopic, false);
 		});
@@ -114,7 +114,7 @@ Lobot.prototype = {
 	
 	// nsIObserver
 	observe: function(aSubject, aTopic, aMsg) {
-		//alert(aTopic);
+		alert(aTopic);
 		switch (aTopic) {
 			case "account-added":
 			case "account-updated":
@@ -288,12 +288,16 @@ Lobot.prototype = {
 	},
 	
 	told: function(aAccount, aConversation, aMessage) {
-		//this.dump(aMessage.who + " >> " + aMessage.message);
-
 		this.moduleRunner(function(module) {
-			this.debug(aConversation, "Test");
 			if (module.told)
 				module.told(this, aAccount, aConversation, aMessage);
+		});
+	},
+
+	heard: function(aAccount, aConversation, aMessage) {
+		this.moduleRunner(function(module) {
+			if (module.heard)
+				module.heard(this, aAccount, aConversation, aMessage);
 		});
 	},
 	
@@ -363,4 +367,4 @@ Components.utils.import("resource://lobot/lobotUtils.jsm");
 
 var lobot = new Lobot([helloWorld, logger]); // Initialize
 
-this.addEventListener("load", lobot.registerObservers(), false);
+this.addEventListener("load", function() { lobot.registerObservers(); }, false);
