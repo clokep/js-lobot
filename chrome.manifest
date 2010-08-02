@@ -1,3 +1,5 @@
-content		lobot					chrome/content/
-locale		lobot		en-US		chrome/locale/en-US/
-resource	lobot					modules/
+content		lobot									chrome/content/
+locale		lobot		en-US						chrome/locale/en-US/
+resource	lobot									modules/
+
+overlay		chrome://instantbird/content/blist.xul	chrome://lobot/content/blist.xul

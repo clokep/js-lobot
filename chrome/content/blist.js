@@ -34,7 +34,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var EXPORTED_SYMBOLS = ["Lobot"];
+// XXX This should all be in private scope
+function dump(aMessage) {
+	var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+											 .getService(Components.interfaces.nsIConsoleService);
+	consoleService.logStringMessage("Lobot: " + aMessage);
+}
 
 function Lobot(modulePacks) {
 	// Lobot framework
@@ -42,8 +47,6 @@ function Lobot(modulePacks) {
 	this.modules = [];
 	this.modulePacks = [{name: "core", author: "Patrick Cloke", version: 0.1}];
 	this.addModulePacks(modulePacks);
-
-	this.registerObservers();
 
 	this.startup();
 	
@@ -56,6 +59,33 @@ function Lobot(modulePacks) {
 	this['maxInConversation'] = 200; // beyond this answers are /msged
 };
 Lobot.prototype = {
+	globalNotifications: [
+		"account-added",
+		"account-updated",
+		"account-removed",
+		"account-connected",
+		"account-signin-on",
+		"account-connecting",
+		"account-disconnecting",
+		"account-disconnected",
+		"account-progress",
+		"account-connect-error",
+		"account-list-updated",
+		"status-changed",
+		"autologin-processed",
+		"purple-quit",
+		"new-conversation",
+		"new-text",
+		"buddy-added",
+		"buddy-signed-on",
+		"buddy-signed-off",
+		"buddy-removed",
+		"buddy-deleted",
+		"buddy-away",
+		"buddy-idle",
+		"buddy-alias"
+	],
+
 	purpleIConversationNotifications: [
 		"new-text",
 		"update-conv-title"
@@ -77,49 +107,55 @@ Lobot.prototype = {
 		
 		let self = this;
 		
-		[
-			"account-added",
-			"account-updated",
-			"account-removed",
-			"account-connected",
-			"account-signin-on",
-			"account-connecting",
-			"account-disconnecting",
-			"account-disconnected",
-			"account-progress",
-			"account-connect-error",
-			"account-list-updated",
-			"status-changed",
-			"autologin-processed",
-			"purple-quit",
-			"new-conversation",
-			"new-text",
-			"buddy-added",
-			"buddy-signed-on",
-			"buddy-signed-off",
-			"buddy-removed",
-			"buddy-deleted",
-			"buddy-away",
-			"buddy-idle",
-			"buddy-alias"
-		].forEach(function (aTopic) {
+		self.globalNotifications.forEach(function (aTopic) {
 			observerService.addObserver(self, aTopic, false);
 		});
 	},
 	
 	// nsIObserver
 	observe: function(aSubject, aTopic, aMsg) {
-		alert(aTopic);
+		//alert(aTopic);
 		switch (aTopic) {
+			case "account-added":
+			case "account-updated":
+			case "account-removed":
 			case "account-connected":
-				//alert("Wee");
+			case "account-signin-on":
+			case "account-connecting":
+			case "account-disconnecting":
+			case "account-disconnected":
+			case "account-progress":
+			case "account-connect-error":
+			case "account-list-updated":
+			case "status-changed":
+			case "autologin-processed":
+			case "purple-quit":
 				break;
 			case "new-conversation":
-				this.purpleIConversationNotifications.forEach(function (aTopic) {
-					obsSvc.addObserver(Lobot, aTopic, false);
+				let self = this;
+				
+				self.purpleIConversationNotifications.forEach(function (aTopic) {
+					//obsSvc.addObserver(self, aTopic, false);
 				});
 				break;
+			case "new-text":
+				if (aSubject.containsNick && !aSubject.notification)
+					this.told(aSubject);
+				else (!aSubject.notification)
+					this.heard(aSubject);
+				break;
+			case "buddy-added":
+			case "buddy-signed-on":
+			case "buddy-signed-off":
+			case "buddy-removed":
+			case "buddy-deleted":
+			case "buddy-away":
+			case "buddy-idle":
+			case "buddy-alias":
+				// Nothing yet
+				break;
 			default:
+				// Do nothing
 				break;
 		}
 	},
@@ -323,3 +359,8 @@ Buddy.prototype = {
 		this.self.dump(this.name + " <b>*** " + what + " ***</b>");
 	}
 }
+Components.utils.import("resource://lobot/lobotUtils.jsm");
+
+var lobot = new Lobot([helloWorld, logger]); // Initialize
+
+this.addEventListener("load", lobot.registerObservers(), false);

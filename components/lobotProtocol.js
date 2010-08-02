@@ -34,40 +34,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// Register chrome:// & resource:// URIs
-{
-	// <https://developer.mozilla.org/en/XPConnect/xpcshell/HOWTO>
-	// <https://bugzilla.mozilla.org/show_bug.cgi?id=546628>
-	let Cc = Components.classes;
-	let Ci = Components.interfaces;
-
-	// Register resource://app/ URI
-	let ios = Cc["@mozilla.org/network/io-service;1"]
-				 .getService(Ci.nsIIOService);
-	let resHandler = ios.getProtocolHandler("resource")
-						.QueryInterface(Ci.nsIResProtocolHandler);
-	let mozDir = Cc["@mozilla.org/file/directory_service;1"]
-					.getService(Ci.nsIProperties)
-					.get("CurProcD", Ci.nsILocalFile);
-	let mozDirURI = ios.newFileURI(mozDir);
-	resHandler.setSubstitution("app", mozDirURI);
-
-	// register chrome://* URIs
-	let cr = Cc["@mozilla.org/chrome/chrome-registry;1"]
-				.getService(Ci.nsIChromeRegistry);
-	cr.checkForNewChrome();
-}
-
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://app/modules/jsProtoHelper.jsm");
-Components.utils.import("resource://lobot/lobot.jsm");
-Components.utils.import("resource://lobot/lobotUtils.jsm");
 
 const Ci = Components.interfaces;
 
 function Conversation(aAccount) {
 	this._init(aAccount);
-	aAccount.lobot.addConversation(this);
 }
 Conversation.prototype = {
 	_disconnected: false,
@@ -88,7 +61,6 @@ Conversation.prototype = {
 		}
 
 		this.writeMessage("You", aMsg, {outgoing: true});
-		this.account.lobot.told(this.account, this, new Message("You", aMsg, {outgoing: true}));
 	},
 
 	get name() "Lobot"
@@ -97,7 +69,6 @@ Conversation.prototype.__proto__ = GenericConversationPrototype;
 
 function Account(aProtoInstance, aKey, aName) {
 	this._init(aProtoInstance, aKey, aName);
-	this.lobot = new Lobot([helloWorld, logger]);
 }
 Account.prototype = {
 	connect: function() {
