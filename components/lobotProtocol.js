@@ -34,6 +34,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+// Register chrome:// & resource:// URIs
+{
+	// <https://developer.mozilla.org/en/XPConnect/xpcshell/HOWTO>
+	// <https://bugzilla.mozilla.org/show_bug.cgi?id=546628>
+	let Cc = Components.classes;
+	let Ci = Components.interfaces;
+
+	// Register resource://app/ URI
+	let ios = Cc["@mozilla.org/network/io-service;1"]
+				 .getService(Ci.nsIIOService);
+	let resHandler = ios.getProtocolHandler("resource")
+						.QueryInterface(Ci.nsIResProtocolHandler);
+	let mozDir = Cc["@mozilla.org/file/directory_service;1"]
+					.getService(Ci.nsIProperties)
+					.get("CurProcD", Ci.nsILocalFile);
+	let mozDirURI = ios.newFileURI(mozDir);
+	resHandler.setSubstitution("app", mozDirURI);
+
+	// register chrome://* URIs
+	let cr = Cc["@mozilla.org/chrome/chrome-registry;1"]
+				.getService(Ci.nsIChromeRegistry);
+	cr.checkForNewChrome();
+}
+
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://app/modules/jsProtoHelper.jsm");
 Components.utils.import("resource://lobot/lobot.jsm");
@@ -41,28 +65,71 @@ Components.utils.import("resource://lobot/lobot.jsm");
 const Ci = Components.interfaces;
 
 function Conversation(aAccount) {
-  this._init(aAccount);
+	this._init(aAccount);
 }
 Conversation.prototype = {
-  get name() "Lobot"
+	_disconnected: false,
+	_setDisconnected: function() {
+		this._disconnected = true;
+	},
+	close: function() {
+		if (!this._disconnected)
+			this.account.disconnect(true);
+	},
+	sendMsg: function (aMsg) {
+		if (this._disconnected) {
+			this.writeMessage("Lobot",
+							  "This message could not be sent because the conversation is no longer active: " + aMsg,
+							  {system: true, error: true});
+			return;
+		}
+
+		this.writeMessage("You", aMsg, {outgoing: true});
+		this.account.lobot.told(this.account, this, new Message("You", aMsg, {outgoing: true}));
+	},
+
+	get name() "Lobot"
 };
 Conversation.prototype.__proto__ = GenericConversationPrototype;
 
 function Account(aProtoInstance, aKey, aName) {
-  this._init(aProtoInstance, aKey, aName);
-  //this._lobot = new Lobot();
+	this._init(aProtoInstance, aKey, aName);
+	this.lobot = new Lobot([helloWorld, logger]);
 }
 Account.prototype = {
+	connect: function() {
+		this.base.connecting();
+		// do something here
+		this.base.connected();
+		let self = this;
+		setTimeout(function() {
+			self._conv = new Conversation(self);
+			self._conv.writeMessage("Lobot", "You are now talking to Lobot.", {system: true});
+			// Probably want out to output a bunch of stuff here
+		}, 0);
+	},
+	_conv: null,
+	disconnect: function(aSilent) {
+		this.base.disconnecting(this._base.NO_ERROR, "");
+		if (!aSilent)
+			this._conv.writeMessage("Lobot", "You have disconnected.", {system: true});
+		if (this._conv) {
+			this._conv._setDisconnected();
+			delete this._conv;
+		}
+		this.base.disconnected();
+	}
 
 };
 Account.prototype.__proto__ = GenericAccountPrototype;
 
 function lobotProtocol() {}
 lobotProtocol.prototype = {
-  get name() "Lobot",
-  loadAccount: function(aKey) new Account(this, aKey),
-  createAccount: function(aName, aKey) new Account(this, aKey, aName),
-  classID: Components.ID("{a04b520c-0a0a-441e-8dab-6adc5b7a7587}"),
+	get name() "Lobot",
+	//loadAccount: function(aKey) new Account(this, aKey),
+	//createAccount: function(aName, aKey) new Account(this, aKey, aName),
+	getAccount: function(aKey, aName) new Account(this, aKey, aName),
+	classID: Components.ID("{a04b520c-0a0a-441e-8dab-6adc5b7a7587}"),
 };
 lobotProtocol.prototype.__proto__ = GenericProtocolPrototype;
 

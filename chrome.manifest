@@ -1,3 +1,3 @@
-content		lobot	chrome/content
-skin		lobot	classic/1.0		chrome/skin/
-resource	lobot	modules/
+content		lobot					chrome/content/
+locale		lobot		en-US		chrome/locale/en-US/
+resource	lobot					modules/

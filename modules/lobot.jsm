@@ -34,11 +34,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var EXPORTED_SYMBOLS = ["Lobot", "User", "Channel", "helloWorld", "logger"];
+var EXPORTED_SYMBOLS = ["Lobot", "helloWorld", "logger"];
 
-function Lobot(name, modulePacks) {
+function Lobot(modulePacks) {
 	// Lobot framework
-	this.name = name;
+	this.name = "Lobot"; // XXX Needs to be moved to an account basis
 	this.modules = [];
 	this.modulePacks = [{name: "core", author: "Patrick Cloke", version: 0.1}];
 	this.addModulePacks(modulePacks);
@@ -46,21 +46,29 @@ function Lobot(name, modulePacks) {
 	
 	// Keep track of "stuff"
 	this.users = [new User(this, this.name)];
-	this.channels = [];
+	this.conversations = [];
 	this.accounts = [];
 	
 	// Some configuration options
-	this['maxInChannel'] = 200; // beyond this answers are /msged
+	this['maxInConversation'] = 200; // beyond this answers are /msged
 };
 Lobot.prototype = {
 	/*
 	 * Utilities
 	 */
-	dump: function(str) {
-		document.getElementById("console").innerHTML += str + "<br>";
+	dump: function(aConversation, aStr) {
+		aConversation.writeMessage("Lobot",
+								   aStr,
+								   {incoming: true});
 	},
-	debug: function (str) {
-		this.dump("<span style=\"color: grey;\">[<i>" + str + "</i>]</span>");
+	debug: function (aConversation, aStr) {
+		aConversation.writeMessage("Lobot-Debug",
+								   aStr,
+								   {
+									   incoming: true,
+									   system: true,
+									   noLinkification: true
+								   });
 	},
 
 	addModulePacks: function(modulePacks) {
@@ -107,10 +115,10 @@ Lobot.prototype = {
 					return this.users[key];
 	},
 	
-	addChannel: function(channel) {
-		this.channels[channel.name] = channel;
-		channel.users = this.users; // XXX for testing
-		// Find all users in this channel and add them
+	addConversation: function(conversation) {
+		this.conversations[conversation.name] = conversation;
+		conversation.users = this.users; // XXX for testing
+		// Find all users in this conversation and add them
 	},
 	
 	/*
@@ -138,15 +146,15 @@ Lobot.prototype = {
 		});
 	},
 	
-	schedule: function(self, user, time, channel, waitTime, repeatTimes, fun /*, data*/) {
+	schedule: function(self, user, time, conversation, waitTime, repeatTimes, fun /*, data*/) {
 		var data = Array.prototype.slice.call(arguments).slice(7);
 		// _self is the Lobot instance, self should be a reference back to the caller
 		var _self = this;
-		//_self.debug([self.name, user.name, time, channel, waitTime, repeatTimes, fun, data].join("<br>"));
+		//_self.debug([self.name, user.name, time, conversation, waitTime, repeatTimes, fun, data].join("<br>"));
 		setTimeout(function() {
-			[self, user, time, channel, waitTime, repeatTimes, fun, data] = fun.call(self, _self, user, time, channel, waitTime, repeatTimes, data);
+			[self, user, time, conversation, waitTime, repeatTimes, fun, data] = fun.call(self, _self, user, time, conversation, waitTime, repeatTimes, data);
 			if (repeatTimes > 0 || repeatTimes < 0) // < 0 is forever! // XXX we could get rid of this, or maybe we shouldn't allow the user to edit repeatTimes?
-				_self.schedule(self, user, time, channel, waitTime, --repeatTimes, fun, data);
+				_self.schedule(self, user, time, conversation, waitTime, --repeatTimes, fun, data);
 		}, waitTime);
 	},
 
@@ -154,36 +162,36 @@ Lobot.prototype = {
 		this.executeModuleFunction("startup");
 	},
 	
-	help: function(helpTopic) {
+	help: function(aConversation, helpTopic) {
 		if (helpTopic)
 			this.moduleRunner(function(module) {
 				for (topic in module.help)
 					if (topic == helpTopic)
-						this.dump("<< " + topic + ": " + module.help[topic]);
+						this.dump(aConversation, topic + ": " + module.help[topic]);
 			});
 		else
 			this.moduleRunner(function(module) {
 				for (topic in module.help)
-					this.dump("<< " + topic);
+					this.dump(aConversation, topic);
 			});
 	},
 	
-	told: function(user, time, channel, rawMessage) {
-		this.dump(user.name + " >> " + rawMessage);
-		var message = rawMessage.split(/\W/);
+	told: function(aAccount, aConversation, aMessage) {
+		//this.dump(aMessage.who + " >> " + aMessage.message);
 
 		this.moduleRunner(function(module) {
+			this.debug(aConversation, "Test");
 			if (module.told)
-				module.told(this, user, time, channel, message, rawMessage);
+				module.told(this, aAccount, aConversation, aMessage);
 		});
 	},
 	
-	// Automatically choose who to talk to based on whether a user/channel exists or not
-	say: function(message, user, channel, dontAutoMsg) {
-		if (user && !channel)
+	// Automatically choose who to talk to based on whether a user/conversation exists or not
+	say: function(message, user, conversation, dontAutoMsg) {
+		if (user && !conversation)
 			user.say(message);
 		else
-			channel.say(message, user, dontAutoMsg);
+			conversation.say(message, user, dontAutoMsg);
 	},
 	
 	shutdown: function() {
@@ -191,19 +199,19 @@ Lobot.prototype = {
 	}
 }
 
-function Channel(self, name) {
+function Conversation(self, name) {
 	this.users = [];
 	this.join();
 	this.name = name;
 
 	this.self = self;
 };
-Channel.prototype = {
+Conversation.prototype = {
 	say: function(message, user, dontAutoMsg) { // XXX check message length so we don't send empty stuff
-		if (user && message.length > this.self['maxInChannel']) {
+		if (user && message.length > this.self['maxInConversation']) {
 			if (!dontAutoMsg) // Send the user the full message
 				user.say(message);
-			message = message.substr(0, this.self['maxInChannel']);
+			message = message.substr(0, this.self['maxInConversation']);
 			if (!dontAutoMsg)
 				message += '... (rest /msged)';
 			else
@@ -253,14 +261,12 @@ var helloWorld = {
 			verbs: ["hi", "hello"],
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
-			told: function(self, user, time, channel, message, rawMessage) {
+			told: function(self, aAccount, aConversation, aMessage) {
 				if (this.verbs.some(function(verb) {
 					return this.match(new RegExp("(?:^|\\W)" + verb + "(?:\\W|$)", "i"));
-				}, rawMessage)) {
-					//channel.outgoingMessages.push("Hi! " + user.name);
-					channel.say("<< Hi! " + user);
+				}, aMessage.message)) {
+					self.dump(aConversation, "Hi " + aAccount.name + "!");
 				}
-				//self.dump(user + " " + time + " " + JSON.stringify(message));
 				return;
 			},
 			shutdown: function() {
@@ -269,10 +275,10 @@ var helloWorld = {
 				"hi": "Testing the help system",
 				"bye": "Testing the help system again",
 			}
-		},
-		{
+		}/*,
+		{ // XXX Goodbye module?
 			verbs: ["bye", "goodbye"],
-		}
+		}*/
 	]
 };
 
@@ -289,19 +295,19 @@ var logger = {
 				self.loggedMessages = [];
 				self.loggedMessages.push((new Date()) + "Logger starter");
 			},
-			told: function(self, user, time, channel, message, rawMessage) {
+			told: function(self, user, time, conversation, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
 			},
-			heard: function(self, user, time, channel, message, rawMessage) {
+			heard: function(self, user, time, conversation, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
 			},
-			noticed: function(self, user, time, channel, message, rawMessage) {
+			noticed: function(self, user, time, conversation, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
 			},
-			felt: function(self, user, time, channel, message, rawMessage) {
+			felt: function(self, user, time, conversation, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
 			},
-			saw: function(self, user, time, channel, message, rawMessage) {
+			saw: function(self, user, time, conversation, message, rawMessage) {
 				self.loggedMessages.push(rawMessage);
 			}
 		}
