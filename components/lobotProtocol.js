@@ -61,11 +61,13 @@
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://app/modules/jsProtoHelper.jsm");
 Components.utils.import("resource://lobot/lobot.jsm");
+Components.utils.import("resource://lobot/lobotUtils.jsm");
 
 const Ci = Components.interfaces;
 
 function Conversation(aAccount) {
 	this._init(aAccount);
+	aAccount.lobot.addConversation(this);
 }
 Conversation.prototype = {
 	_disconnected: false,
@@ -75,6 +77,7 @@ Conversation.prototype = {
 	close: function() {
 		if (!this._disconnected)
 			this.account.disconnect(true);
+		aAccount.lobot.removeConversation(this);
 	},
 	sendMsg: function (aMsg) {
 		if (this._disconnected) {
@@ -119,17 +122,18 @@ Account.prototype = {
 		}
 		this.base.disconnected();
 	}
-
 };
 Account.prototype.__proto__ = GenericAccountPrototype;
 
 function lobotProtocol() {}
 lobotProtocol.prototype = {
 	get name() "Lobot",
+	get registerNoScreenName() true,
+
 	//loadAccount: function(aKey) new Account(this, aKey),
 	//createAccount: function(aName, aKey) new Account(this, aKey, aName),
 	getAccount: function(aKey, aName) new Account(this, aKey, aName),
-	classID: Components.ID("{a04b520c-0a0a-441e-8dab-6adc5b7a7587}"),
+	classID: Components.ID("{a04b520c-0a0a-441e-8dab-6adc5b7a7587}")
 };
 lobotProtocol.prototype.__proto__ = GenericProtocolPrototype;
 

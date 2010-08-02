@@ -34,7 +34,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var EXPORTED_SYMBOLS = ["Lobot", "helloWorld", "logger"];
+var EXPORTED_SYMBOLS = ["Lobot"];
 
 function Lobot(modulePacks) {
 	// Lobot framework
@@ -45,7 +45,7 @@ function Lobot(modulePacks) {
 	this.startup();
 	
 	// Keep track of "stuff"
-	this.users = [new User(this, this.name)];
+	this.users = [new Buddy(this, this.name)];
 	this.conversations = [];
 	this.accounts = [];
 	
@@ -102,11 +102,11 @@ Lobot.prototype = {
 		}, this);*/
 	},
 	
-	addUser: function(user) {
+	addBuddy: function(user) {
 		this.users[user.name] = user;
 	},
 	
-	getUser: function(userName) {
+	getBuddy: function(userName) {
 		if (this.users[userName])
 			return this.users[userName];
 		else // Try to find a case insensitive version and return it
@@ -115,12 +115,16 @@ Lobot.prototype = {
 					return this.users[key];
 	},
 	
-	addConversation: function(conversation) {
-		this.conversations[conversation.name] = conversation;
-		conversation.users = this.users; // XXX for testing
-		// Find all users in this conversation and add them
+	addConversation: function(aConversation) {
+		this.conversations[aConversation.name] = new Conversation(aConversation);
+		// XXX Find all users in this conversation and add them
+		//this.users[buddy.name] = new Buddy(aConversation.buddy);
 	},
-	
+
+	removeConversation: function(aConversation) {
+		delete this.conversations[aConversation.name];
+	},
+
 	/*
 	 * Run a function for every module
 	 * Second parameter is "this" variable in function, otherwise the Lobot instance is used
@@ -234,12 +238,12 @@ Conversation.prototype = {
 	join: function() {}
 }
 
-function User(self, name) {
+function Buddy(self, name) {
 	this.name = name;
 
 	this.self = self;
 }
-User.prototype = {
+Buddy.prototype = {
 	say: function(message) {
 		this.self.dump(this.name + " << <b>" + message + "</b>");
 	},
@@ -248,68 +252,3 @@ User.prototype = {
 		this.self.dump(this.name + " <b>*** " + what + " ***</b>");
 	}
 }
-
-var helloWorld = {
-	meta: {
-		name: "Hello World!",
-		version: 0.1,
-		author: "Patrick Cloke",
-		requires: [{name: "core", version: 0}/*, {name: "fake", version: 1}*/]
-	},
-	modules: [
-		{
-			verbs: ["hi", "hello"],
-			requiresAuth: false, // Requires the user to be authenticated with the bot
-			requiresDirect: false, // Requires the message to refer to the bot
-			told: function(self, aAccount, aConversation, aMessage) {
-				if (this.verbs.some(function(verb) {
-					return this.match(new RegExp("(?:^|\\W)" + verb + "(?:\\W|$)", "i"));
-				}, aMessage.message)) {
-					self.dump(aConversation, "Hi " + aAccount.name + "!");
-				}
-				return;
-			},
-			shutdown: function() {
-			},
-			help: {
-				"hi": "Testing the help system",
-				"bye": "Testing the help system again",
-			}
-		}/*,
-		{ // XXX Goodbye module?
-			verbs: ["bye", "goodbye"],
-		}*/
-	]
-};
-
-var logger = {
-	meta: {
-		name: "Logger",
-		version: 0.1,
-		author: "Patrick Cloke",
-		requires: [{name: "core", version: 0}]
-	},
-	modules: [
-		{
-			startup: function(self) {
-				self.loggedMessages = [];
-				self.loggedMessages.push((new Date()) + "Logger starter");
-			},
-			told: function(self, user, time, conversation, message, rawMessage) {
-				self.loggedMessages.push(rawMessage);
-			},
-			heard: function(self, user, time, conversation, message, rawMessage) {
-				self.loggedMessages.push(rawMessage);
-			},
-			noticed: function(self, user, time, conversation, message, rawMessage) {
-				self.loggedMessages.push(rawMessage);
-			},
-			felt: function(self, user, time, conversation, message, rawMessage) {
-				self.loggedMessages.push(rawMessage);
-			},
-			saw: function(self, user, time, conversation, message, rawMessage) {
-				self.loggedMessages.push(rawMessage);
-			}
-		}
-	]
-};
