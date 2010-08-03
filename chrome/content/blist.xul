@@ -2,5 +2,6 @@
 <overlay id="lobotOverlay"
 		 xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+	<script type="application/javascript" src="chrome://lobot/content/xregexp.js"/>
 	<script type="application/javascript" src="chrome://lobot/content/blist.js"/>
 </overlay>

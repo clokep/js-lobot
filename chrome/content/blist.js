@@ -250,6 +250,7 @@ Lobot.prototype = {
 		});
 	},
 	
+	// Execute a function in each module if it exists
 	executeModuleFunction: function(fun) {
 		this.moduleRunner(function(module) {
 			if (module[fun])
@@ -273,11 +274,11 @@ Lobot.prototype = {
 		this.executeModuleFunction("startup");
 	},
 	
-	help: function(aConversation, helpTopic) {
-		if (helpTopic)
+	help: function(aConversation, aHelpTopic) {
+		if (aHelpTopic)
 			this.moduleRunner(function(module) {
 				for (topic in module.help)
-					if (topic == helpTopic)
+					if (topic == aHelpTopic)
 						this.dump(aConversation, topic + ": " + module.help[topic]);
 			});
 		else
