@@ -208,33 +208,17 @@ Lobot.prototype = {
 		}, this);*/
 	},
 	
-	addBuddy: function(user) {
-		this.users[user.name] = user;
-	},
-	
-	getBuddy: function(userName) {
+	/*getBuddy: function(userName) { // XXX
 		if (this.users[userName])
 			return this.users[userName];
 		else // Try to find a case insensitive version and return it
 			for (var key in this.users)
 				if (key.toLowerCase() == userName.toLowerCase())
 					return this.users[key];
-	},
+	},*/
 	
-	addConversation: function(aConversation) {
-		this.conversations[aConversation.name] = new Conversation(aConversation);
-		// XXX Find all users in this conversation and add them
-		//this.users[buddy.name] = new Buddy(aConversation.buddy);
-	},
-
-	removeConversation: function(aConversation) {
-		delete this.conversations[aConversation.name];
-	},
-
-	/*
-	 * Run a function on each module (if it exists)
-	 * Second parameter is "this" variable in function, otherwise the Lobot instance is used
-	 */
+	// Run a function on each module (if it exists)
+	// Second parameter is "this" variable in function, otherwise the Lobot instance is used
 	moduleRunner: function(fun /*, thisp*/) {
 		if (typeof fun != "function")
 			throw new TypeError();
@@ -252,10 +236,8 @@ Lobot.prototype = {
 	// Run a function in each module (if it exists)
 	// Uses the Lobot instance as the first parameter automatically
 	executeModuleFunction: function(fun, args) {
-		if (!args)
-			args = [this];
-		else
-			args.unshift(this);
+		args = args ? args : [];
+		args.unshift(this);
 
 		this.moduleRunner(function(module) {
 			if (module[fun] && typeof module[fun] == "function")

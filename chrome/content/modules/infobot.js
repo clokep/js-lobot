@@ -109,9 +109,10 @@ var infobot = {
 		
 		// JavaScript port of infobot.bm
 		told: function(self, aAccount, aConversation, aMessage) {
-			var matches;
+			let matches;
+			let message = aMessage.originalMessage;
 
-			if ((matches = (new XRegExp("^\\s*status[?\\s]*$", "si").exec(aMessage.originalMessage)))) {
+			if ((matches = (new XRegExp("^\\s*status[?\\s]*$", "si").exec(message)))) {
 				var sum = this.countFactoids(self);
 				var questions = self['questions'] == 1 ? "1 question" : self['questions'] + " questions";
 				var edits = self['edits'] == 1 ? "1 edit" : self['edits'] + " edits";
@@ -122,19 +123,19 @@ var infobot = {
 							+ " last reload, I've been asked " + questions + ","
 							+ " performed " + edits + ", and spoken with other "
 							+ "bots " + interbots + ".", user, channel);
-			} else if (!channel && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(aMessage.originalMessage))) { 
+			} else if (!aConversation.isChat && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(message))) { 
 				if (user.name != self.name)
 					this.receivedDunno(self, aAccount, aConversation, aMessage, matches[1], matches[2]);
-			} else if (!channel && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(aMessage.originalMessage))) {
+			} else if (!aConversation.isChat && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(message))) {
 				if (user.name != self.name)
 					this.receivedQuery(self, aAccount, aConversation, aMessage, matches[2], matches[1]);
-			} else if (!channel && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(aMessage.originalMessage))) {
+			} else if (!aConversation.isChat && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(message))) {
 				if (user.name != self.name)
 					this.receivedReply(self, aAccount, aConversation, aMessage, matches[3], matches[2], matches[1], matches[4]);
-			} else if ((matches = /^\s*literal\s+(.+?)\s*$/.exec(aMessage.originalMessage)))
+			} else if ((matches = /^\s*literal\s+(.+?)\s*$/.exec(message)))
 				this.literal(self, user, channel, matches[1]);
 			else
-				return !this.doFactoidCheck(self, aAccount, aConversation, aMessage, rawMessage, true);
+				return !this.doFactoidCheck(self, aAccount, aConversation, aMessage, true);
 			return false; // we've dealt with it, no need to do anything else.
 		},
 
