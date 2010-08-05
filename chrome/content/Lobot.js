@@ -147,8 +147,9 @@ Lobot.prototype = {
 		}
 	},
 	
-	receivedMessage: function(aMessage) {	
+	receivedMessage: function(aMessage) {
 		//if (!aMessage.containsNick && !aMessage.system)
+		dump(this.decodeHTMLEntities(aMessage));
 			let aConversation = aMessage.conversation.QueryInterface(Ci.purpleIConversation);
 			this.told(aMessage,
 					  aConversation.isChat ? this.getBuddyFromConversation(aConversation, aMessage.who) : aConversation.QueryInterface(Ci.purpleIConvIM).buddy,
@@ -161,6 +162,7 @@ Lobot.prototype = {
 	/*
 	 * Utilities
 	 */
+
 	dump: function(aConversation, aStr) {
 		aConversation.writeMessage("Lobot",
 								   aStr,

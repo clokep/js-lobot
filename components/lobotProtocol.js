@@ -78,7 +78,7 @@ Account.prototype = {
 		setTimeout(function() {
 			self._conv = new Conversation(self);
 			self._conv.writeMessage("Lobot", "You are now talking to Lobot.", {system: true});
-		}, 0);
+		}, 100);
 	},
 	_conv: null,
 	disconnect: function(aSilent) {

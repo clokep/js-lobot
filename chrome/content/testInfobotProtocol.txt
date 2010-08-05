@@ -1,0 +1,59 @@
+/* See http://mxr.mozilla.org/mozilla/source/webtools/mozbot/BotModules/Infobot.txt#133
+ * ------- originator of private message
+ * |    +--- target of private message
+ * |    |
+ * V    V
+ * z -> A: what is foo?
+ * A -> z: I have no idea.
+ * A -> B: :INFOBOT:QUERY <z> foo
+ * A -> C: :INFOBOT:QUERY <z> foo
+ * B -> A: :INFOBOT:REPLY <x> foo =is=> bar
+ * C -> A: :INFOBOT:DUNNO <C> foo
+ * A -> z: B knew: foo is bar
+ * A -> C: :INFOBOT:REPLY <C> foo =is=> bar
+ */
+/*
+B.told(x, new Date(), null, "foo is bar // Tell B so he knows
+
+A.told(z, new Date(), null, "what is foo?
+// A -> z: I have no idea.
+B.told(Au, new Date(), null, ":INFOBOT:QUERY <z> foo
+C.told(Au, new Date(), null, ":INFOBOT:QUERY <z> foo
+A.told(Bu, new Date(), null, ":INFOBOT:REPLY <z> foo =is=> bar
+A.told(Cu, new Date(), null, ":INFOBOT:DUNNO <C> foo
+// A -> z: B knew: foo is bar
+// A -> C: :INFOBOT:REPLY <C> foo =is=> bar
+*/
+/*
+ * z -> A: what is foo?
+ * A -> z: I have no idea.
+ * A -> B: :INFOBOT:QUERY <z> foo
+ * A -> C: :INFOBOT:QUERY <z> foo
+ * B -> A: :INFOBOT:REPLY <x> foo =is=> <alias>bar
+ * C -> A: :INFOBOT:DUNNO <C> foo
+ * A -> B: :INFOBOT:QUERY <z> bar
+ * A -> C: :INFOBOT:QUERY <z> bar
+ * A -> C: :INFOBOT:REPLY <C> foo =is=> <alias>bar
+ * B -> A: :INFOBOT:DUNNO <B> bar
+ * C -> A: :INFOBOT:REPLY <x> bar =is=> baz
+ * A -> z: C knew: bar is baz
+ * A -> B: :INFOBOT:REPLY <B> bar =is=> baz
+ */
+/*
+B.told(x, new Date(), null, "foo is <alias>bar // Tell B so he knows
+C.told(x, new Date(), null, "bar is baz // Tell C so he knows
+
+A.told(z, new Date(), null, "what is foo?
+// A -> z: I have no idea.
+B.told(Au, new Date(), null, ":INFOBOT:QUERY <z> foo
+C.told(Au, new Date(), null, ":INFOBOT:QUERY <z> foo
+A.told(Bu, new Date(), null, ":INFOBOT:REPLY <z> foo =is=> <alias>bar
+A.told(Cu, new Date(), null, ":INFOBOT:DUNNO <C> foo
+// A -> C: :INFOBOT:REPLY <C> foo =is=> <alias>bar
+B.told(Au, new Date(), null, ":INFOBOT:QUERY <z> bar
+C.told(Au, new Date(), null, ":INFOBOT:QUERY <z> bar
+A.told(Bu, new Date(), null, ":INFOBOT:DUNNO <B> bar
+A.told(Cu, new Date(), null, ":INFOBOT:REPLY <z> bar =is=> baz
+// A -> z: C knew: bar is baz
+// A -> B: :INFOBOT:REPLY <B> bar =is=> baz
+*/

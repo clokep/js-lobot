@@ -1,0 +1,48 @@
+Hello!
+This is a test!
+Another test!
+what is this
+
+help
+help infobot
+
+foo is bar
+geez, FOOD is BAR
+tell roger about me!
+John_Doe is awesome!!
+tell roger about me!
+tell roger2 about me! // A user that doesn't exist
+what is food?
+no, food is good.
+what is food
+food is also healthy
+what is food!?
+what is unknown!?
+test is <reply>$who is dumb
+what is test?
+snack is <alias>food
+who is snack
+
+kick is <action>kicks $who!
+what is kick
+tell roger what is kick
+tell roger2 what is kick
+
+status
+bot.told(testUser, new Date(), null, "status // Direct message
+
+/*bot.told(testUser3, new Date(), null, ":INFOBOT:QUERY <target> subject
+bot.told(testUser3, new Date(), null, ":INFOBOT:QUERY <roger> food
+bot.told(testUser2, new Date(), null, "subject is a test :)
+
+bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> food
+bot.told(testUser3, new Date(), null, ":INFOBOT:DUNNO <John_Doe> subject2*/
+
+bot.told(testUser, new Date(), null, "what is food?
+bot.told(testUser, new Date(), null, "forget food
+bot.told(testUser, new Date(), null, "forget food
+bot.told(testUser, new Date(), null, "what is food?
+
+
+bot.told(testUser, new Date(), null, "test1 is here
+bot.told(testUser, new Date(), null, "test1 =~ s/ere/air/

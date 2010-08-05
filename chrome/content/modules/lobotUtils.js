@@ -34,8 +34,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var EXPORTED_SYMBOLS = ["helloWorld", "logger"];
-
 var helloWorld = {
 	meta: {
 		name: "Hello World!",
@@ -48,7 +46,7 @@ var helloWorld = {
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
 			told: function(self, aMessage, aBuddy, aConversation, aAccount) {
-				if (aMessage.originalMessage.match(/h(e(llo|y)|i)/i))
+				if (aMessage.originalMessage.match(/[\s^]h(e(llo|y)|i)[\s$]/i))
 					self.say("Hi " + aMessage.who + "!", null, aConversation);
 			},
 			shutdown: function() {

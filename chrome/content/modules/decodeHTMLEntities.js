@@ -34,15 +34,31 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// XXX This should all be in private scope
-function dump(aMessage) {
-	var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-											 .getService(Components.interfaces.nsIConsoleService);
-	consoleService.logStringMessage("Lobot: " + aMessage);
+var decodeHTMLEntities = {
+	meta: {
+		name: "Decode HTML Entities",
+		version: 0.1,
+		author: "Patrick Cloke",
+		requires: [{name: "core", version: 0}]
+	},
+	modules: [
+		{
+			HTMLEntities2Unicode: {
+				'&amp;' : '&',
+				'&lt;' : '<',
+				'&gt;' : '>',
+			},
+
+			startup: function(self) {
+				dump(this.decodeHTMLEntities("Test&amp;Go!"));
+				self.decodeHTMLEntities = this.decodeHTMLEntities;
+			},
+
+			decodeHTMLEntities : function(str) {
+				for (var entity in this.HTMLEntities2Unicode)
+					str = str.replace(entity, this.HTMLEntities2Unicode[entity]);
+				return str;
+			}
+		}
+	]
 }
-
-//var lobot = new Lobot([helloWorld, logger, infobot]); // Initialize
-//var lobot = new Lobot([helloWorld]); // Initialize
-var lobot = new Lobot([helloWorld, decodeHTMLEntities, infobot]); // Initialize
-
-this.addEventListener("load", function() { lobot.registerObservers(); }, false);
