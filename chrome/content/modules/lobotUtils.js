@@ -47,7 +47,7 @@ var helloWorld = {
 		{
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
-			told: function(self, aAccount, aConversation, aMessage) {
+			told: function(self, aMessage, aBuddy, aConversation, aAccount) {
 				if (aMessage.originalMessage.match(/h(e(llo|y)|i)/i))
 					self.say("Hi " + aMessage.who + "!", null, aConversation);
 			},
@@ -74,7 +74,7 @@ var help = {
 	modules: [
 		{
 			verbs: ["hi", "hello"],
-			told: function(self, aAccount, aConversation, aMessage) {
+			told: function(self, aMessage, aBuddy, aConversation, aAccount) {
 				var matches;
 				if (matches = /^help\s(\S)+\s?(\S)*$/i.exec(aMessage.originalMessage))
 					if (matches[2])

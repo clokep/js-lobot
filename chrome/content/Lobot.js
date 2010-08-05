@@ -42,11 +42,6 @@ function Lobot(modulePacks) {
 	this.addModulePacks(modulePacks);
 
 	this.startup();
-
-	// Keep track of "stuff"
-	this.users = [new Buddy(this, this.name)];
-	this.conversations = [];
-	this.accounts = [];
 	
 	// Some configuration options
 	this['maxInConversation'] = 200; // beyond this answers are /msged
@@ -134,7 +129,7 @@ Lobot.prototype = {
 				});*/
 				break;
 			case "new-text":
-				this.receivedText(aSubject);
+				this.receivedMessage(aSubject);
 				break;
 			case "buddy-added":
 			case "buddy-signed-on":
@@ -152,9 +147,12 @@ Lobot.prototype = {
 		}
 	},
 	
-	receivedText: function(aMessage) {
+	receivedMessage: function(aMessage) {	
 		//if (!aMessage.containsNick && !aMessage.system)
-			this.told(aMessage.conversation.account, aMessage.conversation, aMessage);
+			this.told(aMessage,
+					  aMessage.conversation.isChat ? this.getBuddyFromConversation(aMessage.conversation, aMessage.who) : aMessage.conversation.buddy,
+					  aMessage.conversation,
+					  aMessage.conversation.account);
 		//else if (!aSubject.system)
 		//	this.heard(aMessage.conversation.account, aMessage.conversation, aMessage);
 	},
@@ -167,14 +165,19 @@ Lobot.prototype = {
 								   aStr,
 								   {incoming: true});
 	},
-	debug: function (aConversation, aStr) {
-		aConversation.writeMessage("Lobot-Debug",
+
+	debug: function (aMessage) {
+		/*aConversation.writeMessage("Lobot-Debug",
 								   aStr,
 								   {
 									   incoming: true,
 									   system: true,
 									   noLinkification: true
-								   });
+								   });*/
+		// XXX This should send a message to the Lobot account registered with
+		// this instance of Lobot
+		//this.conversation.sendMsg(aMessage);
+		dump(aMessage);
 	},
 
 	addModulePacks: function(modulePacks) {
@@ -207,15 +210,6 @@ Lobot.prototype = {
 				}, this);
 		}, this);*/
 	},
-	
-	/*getBuddy: function(userName) { // XXX
-		if (this.users[userName])
-			return this.users[userName];
-		else // Try to find a case insensitive version and return it
-			for (var key in this.users)
-				if (key.toLowerCase() == userName.toLowerCase())
-					return this.users[key];
-	},*/
 	
 	// Run a function on each module (if it exists)
 	// Second parameter is "this" variable in function, otherwise the Lobot instance is used
@@ -261,23 +255,32 @@ Lobot.prototype = {
 		this.executeModuleFunction("startup");
 	},
 	
-	told: function(aAccount, aConversation, aMessage) {
-		this.executeModuleFunction("told", [aAccount, aConversation, aMessage]);
+	told: function(aMessage, aBuddy, aConversation, aAccount) {
+		this.executeModuleFunction("told", [aMessage, aBuddy, aConversation, aAccount]);
 	},
 
-	heard: function(aAccount, aConversation, aMessage) {
-		this.executeModuleFunction("heard", [aAccount, aConversation, aMessage]);
+	heard: function(aMessage, aBuddy, aConversation, aAccount) {
+		this.executeModuleFunction("heard", [aMessage, aBuddy, aConversation, aAccount]);
 	},
 	
 	// Automatically choose who to talk to based on whether a user/conversation exists or not
-	say: function(aMessage, aAccountBuddy, aConversation, dontAutoMsg) {
-		if (aAccountBuddy && !aConversation)
-			aConversation = aAccountBuddy.createConversation();
+	say: function(aMessage, aBuddy, aConversation, aAccount, dontAutoMsg) {
+		dump([aMessage, aBuddy, aConversation, aAccount].join("\n"));
+		//if (aBuddy && !aConversation) // aBuddy is 
+		//	aConversation = aAccountBuddy.createConversation();
+		// For chats: aAccount.createConversation(aBuddy.name); // aBuddy is purpleIConvChatBuddy
 		aConversation.sendMsg(aMessage);
 	},
 	
 	shutdown: function() {
 		this.executeModuleFunction("shutdown");
+	},
+	
+	getBuddyFromConversation: function(aConversation, aNick) {
+		var buddies = getIter(aConversation.getParticipants());
+		for (let buddy in buddies)
+			if (buddy.name.toLowerCase() == aNick.toLowerCase())
+				return buddy;
 	}
 }
 
@@ -314,19 +317,4 @@ Conversation.prototype = {
 	},
 
 	join: function() {}
-}
-
-function Buddy(self, name) {
-	this.name = name;
-
-	this.self = self;
-}
-Buddy.prototype = {
-	say: function(message) {
-		this.self.dump(this.name + " << <b>" + message + "</b>");
-	},
-	emote: function(what) {
-		// XXX should send /msg /me what
-		this.self.dump(this.name + " <b>*** " + what + " ***</b>");
-	}
 }
