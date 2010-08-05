@@ -149,10 +149,11 @@ Lobot.prototype = {
 	
 	receivedMessage: function(aMessage) {	
 		//if (!aMessage.containsNick && !aMessage.system)
+			let aConversation = aMessage.conversation.QueryInterface(Ci.purpleIConversation);
 			this.told(aMessage,
-					  aMessage.conversation.isChat ? this.getBuddyFromConversation(aMessage.conversation, aMessage.who) : aMessage.conversation.buddy,
-					  aMessage.conversation,
-					  aMessage.conversation.account);
+					  aConversation.isChat ? this.getBuddyFromConversation(aConversation, aMessage.who) : aConversation.QueryInterface(Ci.purpleIConvIM).buddy,
+					  aConversation,
+					  aConversation.account);
 		//else if (!aSubject.system)
 		//	this.heard(aMessage.conversation.account, aMessage.conversation, aMessage);
 	},
