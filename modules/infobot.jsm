@@ -108,10 +108,10 @@ var infobot = {
 		},
 		
 		// JavaScript port of infobot.bm
-		told: function(self, user, time, channel, message, rawMessage) {
+		told: function(self, aAccount, aConversation, aMessage) {
 			var matches;
 
-			if (matches = (new XRegExp("^\\s*status[?\\s]*$", "si").exec(rawMessage))) {
+			if ((matches = (new XRegExp("^\\s*status[?\\s]*$", "si").exec(aMessage.originalMessage)))) {
 				var sum = this.countFactoids(self);
 				var questions = self['questions'] == 1 ? "1 question" : self['questions'] + " questions";
 				var edits = self['edits'] == 1 ? "1 edit" : self['edits'] + " edits";
@@ -122,37 +122,37 @@ var infobot = {
 							+ " last reload, I've been asked " + questions + ","
 							+ " performed " + edits + ", and spoken with other "
 							+ "bots " + interbots + ".", user, channel);
-			} else if (!channel && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(rawMessage))) { 
+			} else if (!channel && (matches = /^:INFOBOT:DUNNO <(\S+)> (.*)$/.exec(aMessage.originalMessage))) { 
 				if (user.name != self.name)
-					this.receivedDunno(self, user, time, channel, matches[1], matches[2]);
-			} else if (!channel && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(rawMessage))) {
+					this.receivedDunno(self, aAccount, aConversation, aMessage, matches[1], matches[2]);
+			} else if (!channel && (matches = /^:INFOBOT:QUERY <(\S+)> (.*)$/.exec(aMessage.originalMessage))) {
 				if (user.name != self.name)
-					this.receivedQuery(self, user, channel, matches[2], matches[1]);
-			} else if (!channel && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(rawMessage))) {
+					this.receivedQuery(self, aAccount, aConversation, aMessage, matches[2], matches[1]);
+			} else if (!channel && (matches = /^:INFOBOT:REPLY <(\S+)> (.+?) =(is|are)?=> (.*)$/.exec(aMessage.originalMessage))) {
 				if (user.name != self.name)
-					this.receivedReply(self, user, channel, matches[3], matches[2], matches[1], matches[4]);
-			} else if (matches = /^\s*literal\s+(.+?)\s*$/.exec(rawMessage))
+					this.receivedReply(self, aAccount, aConversation, aMessage, matches[3], matches[2], matches[1], matches[4]);
+			} else if ((matches = /^\s*literal\s+(.+?)\s*$/.exec(aMessage.originalMessage)))
 				this.literal(self, user, channel, matches[1]);
-			else if (!this.doFactoidCheck(self, user, time, channel, rawMessage, true)) {
-				//return self.told(@_); // XXX What do we do?
-			}
-			return false; // we've dealt with it, no need to do anything else. // XXX
-		},
-
-		baffled: function(self, user, time, channel, message, direct) { // XXX check this
-			if (!this.doFactoidCheck(self, user, channel, message, direct, true))
-				return self.heard(self, user, time, channel, message);
+			else
+				return !this.doFactoidCheck(self, aAccount, aConversation, aMessage, rawMessage, true);
 			return false; // we've dealt with it, no need to do anything else.
 		},
 
-		heard: function(self, user, time, channel, message) { // XXX check this
-			if (!this.doFactoidCheck(self, user, channel, message, direct, true))
-				return self.heard(self, user, time, channel, message);
+		baffled: function(self, aAccount, aConversation, aMessage, direct) { // XXX check this
+			//if (!this.doFactoidCheck(self, aAccount, aConversation, aMessage, direct, true))
+				//return self.heard(self, user, time, channel, message);
 			return false; // we've dealt with it, no need to do anything else.
 		},
 
-		doFactoidCheck: function(self, user, time, channel, message, direct, baffled) {
-			var matches, shortMessage;
+		heard: function(self, aAccount, aConversation, aMessage) { // XXX check this
+			//if (!this.doFactoidCheck(self, aAccount, aConversation, aMessage, direct, true))
+				//return self.heard(self, aAccount, aConversation, aMessage);
+			return false; // we've dealt with it, no need to do anything else.
+		},
+
+		doFactoidCheck: function(self, aAccount, aConversation, aMessage, direct, baffled) {
+			let matches, shortMessage;
+			let message = aMessage.originalMessage;
 			if (matches = (new XRegExp(
 					"^\\s* (?:\\w+[:.!\\s]+\\s+)?\
 					(?:(?:well|and|or|yes|[uh]+m*|o+[oh]*[k]+(?:a+y+)?|still|well|so|a+h+|o+h+)[:,.!?\\s]+|)*\
@@ -175,53 +175,54 @@ var infobot = {
 				return;
 			} else if (matches = (new XRegExp("^\\s*tell\\s+(\\S+)\\s+about\\s+me(?:[,\\s]+please)?[\\s!?.]*$","si")).exec(message)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 null, // database
-								 user.name, // what
+								 aAccount.name, // what
 								 direct,
 								 matches[1]); // who
 			} else if (matches = (new XRegExp("^\\s*tell\\s+(\\S+)\\s+about\\s+(.+?)(?:[,\\s]+please)?[\\s!?.]*$", "si")).exec(message)) {
 				this.giveFactoid(self,
-								  user,
-								  time,
-								  channel,
+								  aAccount,
+								  aConversation,
+								  aMessage,
 								  null, // database
 								  matches[2], // what
 								  direct,
 								  matches[1]); // who
 			} else if (matches = (new XRegExp("^\\s*tell\\s+(\\S+)\\s+(?:what|who|where)\\s+(?:am\\s+I|I\\s+am)(?:[,\\s]+please)?[\\s!?.]*$", "si")).exec(message)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 'is', // database
-								 user.name, // what
+								 aAccount.name, // what
 								 direct,
 								 matches[1]); // who
 			} else if (matches = (new XRegExp("^\\s*tell\\s+(\\S+)\\s+(?:what|who|where)\\s+(is|are)\\s+(.+?)(?:[,\\s]+please)?[\\s!?.]*$", "si")).exec(message)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 matches[2].toLowerCase(), // database
 								 matches[3], // what
 								 direct,
 								 matches[1]); // who
 			} else if (matches = (new XRegExp("^\\s*tell\\s+(\\S+)\\s+(?:what|who|where)\\s+(.+?)\\s+(is|are)(?:[,\\s]+please)?[\\s!?.]*$", "si")).exec(message)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 matches[3].toLowerCase(), // database
 								 matches[2], // what
 								 direct,
 								 matches[1]); // who
 			} else if (matches = (new XRegExp("^\\s*(.+?)\\s*=~\\s*s?\\/(.+?)\\/(.*?)\\/(i)?(g)?(i)?\\s*$", "si")).exec(message)) {
 				this.editFactoid(self,
-								 user,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 matches[1], // subject
 								 matches[2], // first part to remove
 								 matches[3], // second part to remove
@@ -230,23 +231,25 @@ var infobot = {
 								 direct);
 			} else if (matches = (new XRegExp("^\\s*forget\\s+(?:about\s+)?me\\s*$", "si")).exec(message)) {
 				this.forgetFactoid(self,
-								   user,
-								   channel,
-								   user.name,
+								   aAccount,
+								   aConversation,
+								   aMessage,
+								   aAccount.name,
 								   direct);
 			} else if (matches = (new XRegExp("^\\s*forget\\s+(?:about\\s+)?(.+?)\\s*$", "si")).exec(message)) {
 				this.forgetFactoid(self,
-								   user,
-								   channel,
+								   aAccount,
+								   aConversation,
+								   aMessage,
 								   matches[1],
 								   direct);
 			} else if (matches = (new XRegExp("^(?:what|where|who)\
 											   (?:\\s+the\\s+hell|\\s+on\\s+earth|\\s+the\\s+fuck)?\
 											   \\s+ (is|are) \\s+ (.+?) [?!\\s]* $", "six")).exec(shortMessage)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 matches[1].toLowerCase(), // is/are (optional)
 								 matches[2], // subject
 								 direct);
@@ -258,17 +261,17 @@ var infobot = {
 											   | what\\'?s)\
 											   \\s+ (.+?) [?!\\s]* $", "six")).exec(shortMessage)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 null, // is/are (optional)
 								 matches[1], // subject
 								 direct);
 			} else if (matches = (new XRegExp("^(.+?) \s+ (is|are) \s+ (?:what|where|who) [?!\s]* $", "six")).exec(shortMessage)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 matches[2].toLowerCase(), // is/are (optional)
 								 matches[1], // subject
 								 direct);
@@ -276,17 +279,18 @@ var infobot = {
 											   (?:\\s+the\\s+hell|\\s+on\\s+earth|\\s+the\\s+fuck)? \\s+\
 											   (?:am\\s+I|I\\s+am) [?\\s]* $", "six")).exec(shortMessage)) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 'is', // am => is
-								 user.name, // subject
+								 aAccount.name, // subject
 								 direct);
 			} else if (matches = (new XRegExp("^(no\\s*, (\\s*" + self.name + "\\s*,)? \\s+)? (?:remember\\s*:\\s+)? (.+?) \\s+ (is|are) \\s+ (also\\s+)? (.*?[^?\\s]) \\s* $", "six")).exec(shortMessage)) {
 				// the "remember:" prefix can be used to delimit the start of the actual content, if necessary.
 				this.setFactoid(self,
-								user,
-								channel,
+								aAccount,
+								aConversation,
+								aMessage,
 								!!(matches[1] && (direct || matches[2])), // replace existing answer?
 								matches[3], // subject
 								matches[4].toLowerCase(), // is/are
@@ -296,43 +300,44 @@ var infobot = {
 			} else if (matches = (new XRegExp("^(no\\s*, (?:\\s*" + self.name + "\\s*,)? \\s+)? (?:remember\\s*:\\s+)? I \\s+ am \\s+ (also\\s+)? (.+?) $", "six")).exec(shortMessage)) {
 				// the "remember:" prefix can be used to delimit the start of the actual content, if necessary.
 				this.setFactoid(self,
-								user,
-								channel,
+								aAccount,
+								aConversation,
+								aMessage,
 								!!matches[1], // replace existing answer?
-								user.name, // subject
+								aAccount.name, // subject
 								'is', // I am = Foo is
 								!!matches[2], // add to existing answer?
 								matches[3], // object
 								direct);
 			} else if ((!direct || baffled) && (matches = (new XRegExp("^(.+?)\\s+(is|are)[?\\s]*(\\?)?[?\\s]*$", "si")).exec(shortMessage))) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 matches[2].toLowerCase(), // is/are (optional)
 								 matches[1], // subject
 								 direct);
 				if (matches[3] || (baffled && self['eagerToHelp'])); // XXX This doesn't do anything
 			} else if ((!direct || baffled) && (matches = (new XRegExp("^(.+?)[?!.\\s]*(\\?)?[?!.\\s]*$", "si")).exec(shortMessage))) {
 				this.giveFactoid(self,
-								 user,
-								 time,
-								 channel,
+								 aAccount,
+								 aConversation,
+								 aMessage,
 								 null, // is/are (optional)
 								 matches[1], // subject
 								 direct)
 				if (matches[2] || (baffled && self['eagerToHelp']));
 			} else // XXX what do we do with this
-				return 0;
-			return 1;
+				return false;
+			return true;
 		},
 
-		setFactoid: function(self, user, channel, replace, subject, database, add, object, direct, fromBot) {
-			if (direct || this.allowed(user.name, channel.name, 'Learn')) {
+		setFactoid: function(self, aAccount, aConversation, aMessage, replace, subject, database, add, object, direct, fromBot) {
+			if (direct || this.allowed(aMessage.who, aConversation.name, 'Learn')) {
 				teacher: {
 					if (self['teachers'].length) {
 						for each (teacher in self['teachers'])
-							if (teacher == user.name)
+							if (teacher == aMessage.who)
 								break teacher;
 						return false;
 					}
@@ -351,14 +356,14 @@ var infobot = {
 				} else if (!add) {
 					var what = self.factoids[database][subject].split('|');
 					// XXX local $" = '\' or \'';
-					if (!fromBot)
+					if (!fromBot) // XXX I think I changed logic in here.
 						if (what && what[0] == object) {
 							if (direct)
-								self.say('Yep, that\'s what I thought. Thanks for confirming it.', user, channel);
+								self.say('Yep, that\'s what I thought. Thanks for confirming it.', aConversation, aMessage);
 						} else
 							// XXX "that's one of the alternatives, sure..."
 							if (direct)
-								self.say("But " + subject + " " + database + " '" + what + "'...", user, channel);
+								self.say("But " + subject + " " + database + " '" + what + "'...", aConversation, aMessage);
 					return false; // failed to update database
 				} else {
 					self.debug("Learning that " + subject + " " + database + " also '" + object + "'.");
@@ -366,23 +371,23 @@ var infobot = {
 				}
 				if (!fromBot)
 					if (direct)
-						self.say('ok', user, channel);
+						self.say('ok', aConversation, aMessage);
 				if (self['researchNotes'][subject.toLowerCase()]) {
 					var queue = self['researchNotes'][subject.toLowerCase()];
 					for each (entry in queue) {
-						[userE, timeE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE] = entry;
+						[accountE, conversationE, messageE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE] = entry;
 						if (typeE == 'QUERY') {
-							if ((targetE && user.name != targetE) ||
-								(user.name != userE.name &&
-								(!channel || channel.name != channelE.name))) {
-								[how, what, propagated] = this.getFactoid(self, userE, timeE, channelE, databaseE, subjectE,
+							if ((targetE && aMessage.who != targetE) ||
+								(aMessage.who != messageE.who &&
+								(!aConversation || aConversation.name != conversationE.name))) {
+								[how, what, propagated] = this.getFactoid(self, accountE, conversationE, messageE, databaseE, subjectE,
 																				 targetE, directE, visitedAliasesE, user.name);
 								if (how) {
 									if (targetE)
-										self.debug("I now know what '" + subject + "' " + database + ", so telling " + targetE + ", since " + userE.name + " told me to.");
+										self.debug("I now know what '" + subject + "' " + database + ", so telling " + targetE + ", since " + messageE.who + " told me to.");
 									else
-										self.debug("I now know what '" + subject + "' " + database + ", so telling " + userE.name + " who wanted to know.");
-									this.factoidSay(self, userE, channelE, how, what, directE, targetE);
+										self.debug("I now know what '" + subject + "' " + database + ", so telling " + messageE.who + " who wanted to know.");
+									this.factoidSay(self, accountE, conversationE, messageE, how, what, directE, targetE);
 									entry[1] = 'OLD';
 								} else {
 									// either propagated, or database doesn't match requested database, or internal error
@@ -391,7 +396,7 @@ var infobot = {
 								}
 							}
 						} else if (typeE == 'DUNNO') {
-							var who = targetE ? targetE : userE.name;
+							var who = targetE ? targetE : messageE.who;
 							userE.say(":INFOBOT:REPLY <" + who + "> " + subject + " =" + database + "=> " + self.factoids[database][subject]);
 							entry[1] = 'OLD';
 						}
@@ -404,11 +409,11 @@ var infobot = {
 			}
 		},
 
-		giveFactoid: function(self, user, time, channel, database, subject, direct, target) {
-			if (direct || this.allowed(user.name, channel.name, 'Help')) {
-				if ((new RegExp("^" + self.name + "$", "i")).test(target)) {
+		giveFactoid: function(self, aAccount, aConversation, aMessage, database, subject, direct, target) {
+			if (direct || this.allowed(aMessage.who, aConversation.name, 'Help')) {
+				if ((new RegExp("^" + aAccount.name + "$", "i")).test(target)) {
 					if (direct)
-						self.say('Oh, yeah, great idea, get me to talk to myself.', user, channel);
+						self.say('Oh, yeah, great idea, get me to talk to myself.', aConversation, aMessage);
 				} else {
 					if (subject == 'you') {
 						// first, skip some words that are handled by other commonly-used modules
@@ -416,41 +421,41 @@ var infobot = {
 						return;
 					}
 					self['questions']++;
-					[how, what, propagated] = this.getFactoid(self, user, time, channel, database, subject, target, direct);
+					[how, what, propagated] = this.getFactoid(self, aAccount, aConversation, aMessage, database, subject, target, direct);
 					if (!how) {
-						this.scheduleNoIdea(self, user, time, channel, database, subject, direct, propagated); // XXX Check this
+						this.scheduleNoIdea(self, aAccount, aConversation, aMessage, database, subject, direct, propagated); // XXX Check this
 					} else {
-						self.debug("Telling " + user.name + " about " + subject + ".");
-						this.factoidSay(self, user, channel, how, what, direct, target);
+						self.debug("Telling " + aMessage.who + " about " + subject + ".");
+						this.factoidSay(self, aAccount, aConversation, aMessage, how, what, direct, target);
 					}
 				}
 			}
 		},
 
-		literal: function(user, channel, subject) {
+		literal: function(aAccount, aConversation, aMessage, subject) {
 			var is = this.canonicalizeFactoid(self, 'is', subject);
 			var are = this.canonicalizeFactoid(self, 'are', subject);
 			if (is || are) {
 				if (self.factoids['is'][is]) {
 					var what = self.factoids['is'][is].split('|').join("\' or \'");
-					self.say(is + " is '" + what + "'.", user, channel);
+					self.say(is + " is '" + what + "'.", aConversation, aMessage);
 				}
 				if (self.factoids['are'][are]) {
 					var what = self.factoids['are'][are].split('|').join("\' or \'");
-					self.say(are + " are '" + what + "'.", user, channel);
+					self.say(are + " are '" + what + "'.", aConversation, aMessage);
 				}
 			} else
-				self.say("I have no record of anything called '" + subject + "'.", user, channel);
+				self.say("I have no record of anything called '" + subject + "'.", aConversation, aMessage);
 		},
 
-		scheduleNoIdea: function(self, user, time, channel, database, subject, direct, propagated) {
+		scheduleNoIdea: function(self, aAccount, aConversation, aMessage, database, subject, direct, propagated) {
 			if (propagated)
-				self.schedule(this, user, time, channel, self['noIdeaDelay'], 1, this.scheduled, 'noIdea', database, subject, direct, propagated);
+				self.schedule(this, aAccount, aConversation, aMessage, self['noIdeaDelay'], 1, this.scheduled, 'noIdea', database, subject, direct, propagated);
 			else
-				this.noIdea(self, user, channel, database, subject, direct);
+				this.noIdea(self, aAccount, aConversation, aMessage, database, subject, direct);
 		},
 
-		getFactoid: function(self, user, time, channel, originalDatabase, subject, target, direct, visitedAliases, friend) { // self.research
+		getFactoid: function(self, aAccount, aConversation, aMessage, originalDatabase, subject, target, direct, visitedAliases, friend) { // self.research
 			if (!visitedAliases)
 				visitedAliases = [];
 			var database;
@@ -467,7 +472,7 @@ var infobot = {
 					self['factoidPositions'][database][subject]++;
 				} else
 					answer = alternatives[0];
-				var who = target ? target : user.name;
+				var who = target ? target : aMessage.who;
 				answer = answer.replace(/\$who/g, who);
 				var matches;
 				if (matches = /^<alias>(.*)$/.exec(answer)) {
@@ -475,7 +480,7 @@ var infobot = {
 						return ['msg', "see " + subject, false];
 					else {
 						visitedAliases[subject]++;
-						[how, what, propagated] = this.getFactoid(self, user, time, channel, null, matches[1], target, direct, visitedAliases);
+						[how, what, propagated] = this.getFactoid(self, aAccount, aConversation, aMessage, null, matches[1], target, direct, visitedAliases);
 						if (!how)
 							return ['msg', "see " + matches[1], propagated];
 						else
@@ -525,12 +530,12 @@ var infobot = {
 			return [database, subject];
 		},
 
-		editFactoid: function(self, user, channel, subject, search, replace, global, caseInsensitive, direct) { // XXX this probably breaks
-			if (direct || this.allowed(user.name, channel.name, 'Edit')) {
+		editFactoid: function(self, aAccount, aConversation, aMessage, subject, search, replace, global, caseInsensitive, direct) { // XXX this probably breaks
+			if (direct || this.allowed(aMessage.who, aConversation.name, 'Edit')) {
 				var database;
 				[database, subject] = this.findFactoid(self, database, subject);
 				if (!this.factoidExists(self, database, subject)) {
-					self.say("Er, I don't know about this " + subject + " thingy...", user, channel);
+					self.say("Er, I don't know about this " + subject + " thingy...", aConversation, aMessage);
 					return;
 				}
 				self.debug("Editing the " + subject + " entry.");
@@ -544,13 +549,13 @@ var infobot = {
 				}
 				self.factoids[database][subject] = output.join('|');
 				if (direct)
-					self.say('ok', user, channel);
+					self.say('ok', aConversation, aMessage);
 				self['edits']++;
 			}
 		},
 
-		forgetFactoid: function(self, user, channel, subject, direct) {
-			if (direct || this.allowed(userName, channel, 'Edit')) {
+		forgetFactoid: function(self, aAccount, aConversation, aMessage, subject, direct) {
+			if (direct || this.allowed(aMessage.who, aConversation.name, 'Edit')) {
 				var count = 0;
 				var database;
 				for each (db  in ['is', 'are']) {
@@ -562,11 +567,11 @@ var infobot = {
 				}
 				if (count) {
 					if (direct)
-						self.say("I've forgotten what I knew about '" + subject + "'.", user, channel);
+						self.say("I've forgotten what I knew about '" + subject + "'.", aConversation, aMessage);
 					self['edits']++;
 				} else
 					if (direct)
-						self.say("I never knew anything about '" + subject + "' in the first place!", user, channel);
+						self.say("I never knew anything about '" + subject + "' in the first place!", aConversation, aMessage);
 			}
 		},
 

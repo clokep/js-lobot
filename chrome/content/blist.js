@@ -114,7 +114,7 @@ Lobot.prototype = {
 	
 	// nsIObserver
 	observe: function(aSubject, aTopic, aMsg) {
-		alert(aTopic);
+		//alert(aTopic);
 		switch (aTopic) {
 			case "account-added":
 			case "account-updated":
@@ -139,10 +139,10 @@ Lobot.prototype = {
 				});
 				break;
 			case "new-text":
-				if (aSubject.containsNick && !aSubject.notification)
-					this.told(aSubject);
+				if (!aSubject.containsNick && !aSubject.notification) // XXX Check this
+					this.told(aSubject.conversation.account, aSubject.conversation, aSubject);
 				else (!aSubject.notification)
-					this.heard(aSubject);
+					this.heard(aSubject.conversation.account, aSubject.conversation, aSubject);
 				break;
 			case "buddy-added":
 			case "buddy-signed-on":
@@ -365,7 +365,9 @@ Buddy.prototype = {
 	}
 }
 Components.utils.import("resource://lobot/lobotUtils.jsm");
+//Components.utils.import("resource://lobot/infobot.jsm");
 
+//var lobot = new Lobot([helloWorld, logger, infobot]); // Initialize
 var lobot = new Lobot([helloWorld, logger]); // Initialize
 
 this.addEventListener("load", function() { lobot.registerObservers(); }, false);
