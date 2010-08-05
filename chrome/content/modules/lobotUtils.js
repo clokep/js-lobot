@@ -45,16 +45,11 @@ var helloWorld = {
 	},
 	modules: [
 		{
-			verbs: ["hi", "hello"],
 			requiresAuth: false, // Requires the user to be authenticated with the bot
 			requiresDirect: false, // Requires the message to refer to the bot
 			told: function(self, aAccount, aConversation, aMessage) {
-				if (this.verbs.some(function(verb) {
-					return this.match(new RegExp("(?:^|\\W)" + verb + "(?:\\W|$)", "i"));
-				}, aMessage.message)) {
-					self.dump(aConversation, "Hi " + aAccount.name + "!");
-				}
-				return;
+				if (aMessage.originalMessage.match(/h(e(llo|y)|i)/i))
+					self.say("Hi " + aMessage.who + "!", null, aConversation);
 			},
 			shutdown: function() {
 			},
@@ -69,7 +64,38 @@ var helloWorld = {
 	]
 };
 
-var logger = {
+var help = {
+	meta: {
+		name: "Help",
+		version: 0.1,
+		author: "Patrick Cloke",
+		requires: [{name: "core", version: 0}]
+	},
+	modules: [
+		{
+			verbs: ["hi", "hello"],
+			told: function(self, aAccount, aConversation, aMessage) {
+				var matches;
+				if (matches = /^help\s(\S)+\s?(\S)*$/i.exec(aMessage.originalMessage))
+					if (matches[2])
+						self.moduleRunner(function(module) {
+							for (topic in module.help)
+								if (topic == matches[2])
+									self.say(topic + ": " + module.help[topic], null, aConversation);
+						});
+					else if (matches[1])
+						self.moduleRunner(function(module) {
+							for (topic in module.help)
+								self.say(topic, null, aConversation);
+						});
+					/*else
+						self.say("Nothing found for " + aMessage.originalMessage);*/
+			}
+		}
+	]
+};
+
+var logger = { // XXX this won't work at all in the current system
 	meta: {
 		name: "Logger",
 		version: 0.1,

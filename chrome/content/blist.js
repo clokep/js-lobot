@@ -42,6 +42,6 @@ function dump(aMessage) {
 }
 
 //var lobot = new Lobot([helloWorld, logger, infobot]); // Initialize
-var lobot = new Lobot([helloWorld, logger]); // Initialize
+var lobot = new Lobot([helloWorld]); // Initialize
 
 this.addEventListener("load", function() { lobot.registerObservers(); }, false);

@@ -153,11 +153,10 @@ Lobot.prototype = {
 	},
 	
 	receivedText: function(aMessage) {
-		alert(aMessage.containsNick + " " + aMessage.notification + " " + aMessage.system);
-		if (!aMessage.containsNick && !aMessage.system)
-			this.told(aMessage.conversation.account, aMessage.conversation, aSubject);
-		else if (!aSubject.system)
-			this.heard(aMessage.conversation.account, aMessage.conversation, aSubject);
+		//if (!aMessage.containsNick && !aMessage.system)
+			this.told(aMessage.conversation.account, aMessage.conversation, aMessage);
+		//else if (!aSubject.system)
+		//	this.heard(aMessage.conversation.account, aMessage.conversation, aMessage);
 	},
 
 	/*
@@ -233,7 +232,7 @@ Lobot.prototype = {
 	},
 
 	/*
-	 * Run a function for every module
+	 * Run a function on each module (if it exists)
 	 * Second parameter is "this" variable in function, otherwise the Lobot instance is used
 	 */
 	moduleRunner: function(fun /*, thisp*/) {
@@ -250,11 +249,17 @@ Lobot.prototype = {
 		});
 	},
 	
-	// Execute a function in each module if it exists
-	executeModuleFunction: function(fun) {
+	// Run a function in each module (if it exists)
+	// Uses the Lobot instance as the first parameter automatically
+	executeModuleFunction: function(fun, args) {
+		if (!args)
+			args = [this];
+		else
+			args.unshift(this);
+
 		this.moduleRunner(function(module) {
-			if (module[fun])
-				module[fun](this);
+			if (module[fun] && typeof module[fun] == "function")
+				module[fun].apply(module, args);
 		});
 	},
 	
@@ -274,40 +279,19 @@ Lobot.prototype = {
 		this.executeModuleFunction("startup");
 	},
 	
-	help: function(aConversation, aHelpTopic) {
-		if (aHelpTopic)
-			this.moduleRunner(function(module) {
-				for (topic in module.help)
-					if (topic == aHelpTopic)
-						this.dump(aConversation, topic + ": " + module.help[topic]);
-			});
-		else
-			this.moduleRunner(function(module) {
-				for (topic in module.help)
-					this.dump(aConversation, topic);
-			});
-	},
-	
 	told: function(aAccount, aConversation, aMessage) {
-		this.moduleRunner(function(module) {
-			if (module.told)
-				module.told(this, aAccount, aConversation, aMessage);
-		});
+		this.executeModuleFunction("told", [aAccount, aConversation, aMessage]);
 	},
 
 	heard: function(aAccount, aConversation, aMessage) {
-		this.moduleRunner(function(module) {
-			if (module.heard)
-				module.heard(this, aAccount, aConversation, aMessage);
-		});
+		this.executeModuleFunction("heard", [aAccount, aConversation, aMessage]);
 	},
 	
 	// Automatically choose who to talk to based on whether a user/conversation exists or not
-	say: function(message, user, conversation, dontAutoMsg) {
-		if (user && !conversation)
-			user.say(message);
-		else
-			conversation.say(message, user, dontAutoMsg);
+	say: function(aMessage, aAccountBuddy, aConversation, dontAutoMsg) {
+		if (aAccountBuddy && !aConversation)
+			aConversation = aAccountBuddy.createConversation();
+		aConversation.sendMsg(aMessage);
 	},
 	
 	shutdown: function() {
