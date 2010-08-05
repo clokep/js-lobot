@@ -2,6 +2,9 @@
 <overlay id="lobotOverlay"
 		 xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-	<script type="application/javascript" src="chrome://lobot/content/xregexp.js"/>
+	<script type="application/javascript" src="chrome://lobot/content/libraries/xregexp.js"/>
+	<script type="application/javascript" src="chrome://lobot/content/modules/lobotUtils.js"/>
+	<script type="application/javascript" src="chrome://lobot/content/modules/infobot.js"/>
+	<script type="application/javascript" src="chrome://lobot/content/Lobot.js"/>
 	<script type="application/javascript" src="chrome://lobot/content/blist.js"/>
 </overlay>

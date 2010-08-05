@@ -50,7 +50,6 @@ Conversation.prototype = {
 	close: function() {
 		if (!this._disconnected)
 			this.account.disconnect(true);
-		aAccount.lobot.removeConversation(this);
 	},
 	sendMsg: function (aMsg) {
 		if (this._disconnected) {
@@ -79,7 +78,6 @@ Account.prototype = {
 		setTimeout(function() {
 			self._conv = new Conversation(self);
 			self._conv.writeMessage("Lobot", "You are now talking to Lobot.", {system: true});
-			// Probably want out to output a bunch of stuff here
 		}, 0);
 	},
 	_conv: null,
