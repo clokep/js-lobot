@@ -42,7 +42,7 @@ function Lobot(modulePacks) {
 	this.addModulePacks(modulePacks);
 
 	this.startup();
-	
+
 	// Some configuration options
 	this['maxInConversation'] = 200; // beyond this answers are /msged
 };
@@ -126,7 +126,7 @@ Lobot.prototype = {
 				));*/
 				break;
 			case "new-text":
-				if (aSubject.incoming || true) // Ignore everything we said // XXX
+				if (aSubject.incoming) // Ignore everything we said
 					this.receivedMessage(aSubject);
 				break;
 			case "buddy-added":
@@ -172,16 +172,9 @@ Lobot.prototype = {
 	},
 
 	debug: function (aMessage) {
-		/*aConversation.writeMessage("Lobot-Debug",
-								   aStr,
-								   {
-									   incoming: true,
-									   system: true,
-									   noLinkification: true
-								   });*/
 		// XXX This should send a message to the Lobot account registered with
 		// this instance of Lobot
-		//this.conversation.sendMsg(aMessage);
+		//this.conversation.sendMsg("<system>" + aMessage);
 		dump(aMessage);
 	},
 
@@ -245,11 +238,13 @@ Lobot.prototype = {
 	},
 	
 	schedule: function(self, user, time, conversation, waitTime, repeatTimes, fun /*, data*/) {
+		dump("Scheduling");
 		var data = Array.prototype.slice.call(arguments).slice(7);
 		// _self is the Lobot instance, self should be a reference back to the caller
 		var _self = this;
 		//_self.debug([self.name, user.name, time, conversation, waitTime, repeatTimes, fun, data].join("<br>"));
 		setTimeout(function() {
+			alert("Shedule ran");
 			[self, user, time, conversation, waitTime, repeatTimes, fun, data] = fun.call(self, _self, user, time, conversation, waitTime, repeatTimes, data);
 			if (repeatTimes > 0 || repeatTimes < 0) // < 0 is forever! // XXX we could get rid of this, or maybe we shouldn't allow the user to edit repeatTimes?
 				_self.schedule(self, user, time, conversation, waitTime, --repeatTimes, fun, data);
@@ -286,10 +281,10 @@ Lobot.prototype = {
 				message += '... (there is more; ask me in a /msg)';
 		}
 		
-		if (aBuddy && aConversation.isChat)
-			aConversation.sendMsg(aBuddy.name + ": " + aMessage);
-		else // If a private IM only this occurs
-			aConversation.sendMsg(aMessage);
+		aMessage = ((aBuddy && aConversation.isChat) ? aBuddy.name + ": " : "") + aMessage;
+		aMessage = ((aAccount.protocol.id == "prpl-lobot") ? "<outgoing>" : "") + aMessage;
+
+		aConversation.sendMsg(aMessage);
 	},
 	
 	emote: function(aEmote, aBuddy, aConversation, aAccount) {

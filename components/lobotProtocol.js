@@ -59,7 +59,12 @@ Conversation.prototype = {
 			return;
 		}
 
-		this.writeMessage("You", aMsg, {outgoing: true});
+		if (/^<outgoing>.*$/.test(aMsg)) // Lobot said it
+			this.writeMessage(this.name, aMsg, {outgoing: true});
+		else // You said it
+			// This needs to be incoming so Lobot acts on it, even though it doesn't
+			// really make sense and might break some themes, etc.
+			this.writeMessage(this.account.name, aMsg, {incoming: true});
 	},
 
 	get name() "Lobot"

@@ -344,7 +344,7 @@ var infobot = {
 								 null, // is/are (optional)
 								 matches[1], // subject
 								 direct)
-				if (matches[2] || (baffled && self['eagerToHelp']));
+				if (matches[2] || (baffled && self['eagerToHelp'])); // XXX This doesn't do anything
 			} else // XXX what do we do with this
 				return false;
 			return true;
@@ -361,6 +361,7 @@ var infobot = {
 					}
 				}
 				// update the database
+				dump("replace? " + replace);
 				if (!replace)
 					subject = this.canonicalizeFactoid(self, database, subject);
 				else {
@@ -439,9 +440,9 @@ var infobot = {
 					}
 					self['questions']++;
 					[how, what, propagated] = this.getFactoid(self, aMessage, aBuddy, aConversation, aAccount, database, subject, target, direct);
-					if (!how) {
+					if (!how)
 						this.scheduleNoIdea(self, aMessage, aBuddy, aConversation, aAccount, database, subject, direct, propagated); // XXX Check this
-					} else {
+					else {
 						self.debug("Telling " + aMessage.who + " about " + subject + ".");
 						this.factoidSay(self, aMessage, aBuddy, aConversation, aAccount, how, what, direct, target);
 					}
@@ -571,7 +572,7 @@ var infobot = {
 			}
 		},
 
-		forgetFactoid: function(self, aAccount, aConversation, aMessage, subject, direct) {
+		forgetFactoid: function(self, aMessage, aBuddy, aConversation, aAccount, subject, direct) {
 			if (direct || this.allowed(aMessage.who, aConversation.name, 'Edit')) {
 				var count = 0;
 				var database;
@@ -609,7 +610,7 @@ var infobot = {
 					if (typeE == 'QUERY') {
 						asked++; // at least one bot was already asked quite recently
 						if ((targetE && target.toLowerCase() == targetE.toLowerCase()) || // XXX Might have a bug in infobot.bm
-							(!targetE && user.name.toLowerCase() == userE.name.toLowerCase())) {
+							(!targetE && aMessage.who.toLowerCase() == messageE.who.toLowerCase())) {
 							// already queued
 							return true;
 						}
@@ -617,17 +618,17 @@ var infobot = {
 				}
 			}
 			// remember to tell these people about subject if we ever find out about it:
-			var entry = [user, time, channel, 'QUERY', database, subject, target, direct, visitedAliases];
+			var entry = [aMessage, aBuddy, aConversation, aAccount, 'QUERY', database, subject, target, direct, visitedAliases];
 			if (!self['researchNotes'][subject.toLowerCase()])
 				self['researchNotes'][subject.toLowerCase()] = [];
 			self['researchNotes'][subject.toLowerCase()].push(entry);
-			var who = target ? target : user.name;
+			var who = target ? target : aMessage.who;
 			if (!asked) {
 				// not yet asked, so ask each bot about subject
 				for each (bot in self['friendBots']) {
-					if (bot.name == user.name)
+					if (bot == aAccount.name)
 						continue;
-					bot.say(":INFOBOT:QUERY <" + who + "> " + subject);
+					self.say(":INFOBOT:QUERY <" + who + "> " + subject, aBuddy, aConversation, aAccount); // XXX check this
 				}
 				self['interbots']++;
 				return entry; // return reference to entry so that we can check if it has been replied or not
@@ -637,17 +638,17 @@ var infobot = {
 
 		receivedReply: function(self, aMessage, aBuddy, aConversation, aAccount, subject, target, object) {
 			self['interbots']++;
-			if (!this.setFactoid(self, user, channel, 0, subject, database, 0, object, 1, 1)
+			if (!this.setFactoid(self, aMessage, aBuddy, aConversation, false, subject, database, false, object, true, true)
 				&& self['researchNotes'][subject.toLowerCase()]) {
 				// we didn't believe user, but we might as well tell any users
 				// that were wondering.
 				for each (entry in self['researchNotes'][subject.toLowerCase()]) {
-					[userE, timeE, channelE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE] = entry;
+					[messageE, buddyE, conversationE, accountE, typeE, databaseE, subjectE, targetE, directE, visitedAliasesE] = entry;
 					if (typeE == 'QUERY')
-						self.factoidSay(userE.name, channelE, 'msg', "According to " + userE.name + ", " + subject + " " + database + " '" + object + "'.", directE, targetE);
+						self.factoidSay(messageE, buddyE, conversationE, accountE, 'msg', "According to " + userE.name + ", " + subject + " " + database + " '" + object + "'.", directE, targetE); // XXX this is wrong
 					else if (typeE == 'DUNNO') {
-						var who = targetE ? targetE : userE.name;
-						userE.say(":INFOBOT:REPLY <" + who + " +> " + subject + " =" + database + "=> " + object);
+						var who = targetE ? targetE : messageE.who;
+						self.say(":INFOBOT:REPLY <" + who + " +> " + subject + " =" + database + "=> " + object, buddyE, conversationE, accountE); // XXX this is wrong
 					}
 					entry[1] = 'OLD';
 				}
@@ -660,7 +661,7 @@ var infobot = {
 				// in the spirit of embrace-and-extend, we're going to say that
 				// :INFOBOT:DUNNO means "I don't know, but if you ever find
 				// out, please tell me".
-				user.say(":INFOBOT:DUNNO <" + self.name + "> " + subject);
+				user.say(":INFOBOT:DUNNO <" + aAccount.name + "> " + subject);
 		},
 
 		receivedDunno: function(self, aMessage, aBuddy, aConversation, aAccount, time, target, subject) {
@@ -680,7 +681,7 @@ var infobot = {
 			for each (db in ['is', 'are']) {
 				[database, subject] = this.findFactoid(self, db, subject);
 				if (this.factoidExists(self, database, subject)) {
-					user.say(":INFOBOT:REPLY <" + target + "> " + subject + " =" + database + "=> " + self.factoids[database][subject]);
+					self.say(":INFOBOT:REPLY <" + target + "> " + subject + " =" + database + "=> " + self.factoids[database][subject], aBuddy, aConversation, aAccount);
 					count++;
 				}
 			}
@@ -766,10 +767,10 @@ var infobot = {
 		},
 
 		noIdea: function(self, aMessage, aBuddy, aConversation, aAccount, database, subject, direct) {
-			if (subject.toLowerCase() == user.name.toLowerCase())
+			/*if (false && subject.toLowerCase() == aBuddy.name.toLowerCase()) // XXX fix this
 				if (direct)
 					self.say("Sorry, I've no idea who you are.", aBuddy, aConversation, aAccount);
-			else {
+			else*/ {
 				if (!database)
 					database = 'might be';
 				if (direct)
