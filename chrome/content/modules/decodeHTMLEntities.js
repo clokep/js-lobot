@@ -43,20 +43,19 @@ var decodeHTMLEntities = {
 	},
 	modules: [
 		{
-			HTMLEntities2Unicode: {
-				'&amp;' : '&',
-				'&lt;' : '<',
-				'&gt;' : '>',
-			},
-
 			startup: function(self) {
-				dump(this.decodeHTMLEntities("Test&amp;Go!"));
 				self.decodeHTMLEntities = this.decodeHTMLEntities;
 			},
 
 			decodeHTMLEntities : function(str) {
-				for (var entity in this.HTMLEntities2Unicode)
-					str = str.replace(entity, this.HTMLEntities2Unicode[entity]);
+				let HTMLEntities2Characters = {
+					'&amp;' : '&',
+					'&lt;' : '<',
+					'&gt;' : '>',
+				};
+			
+				for (var entity in HTMLEntities2Characters)
+					str = str.replace(new RegExp(entity, "gi"), HTMLEntities2Characters[entity]);
 				return str;
 			}
 		}

@@ -89,19 +89,19 @@ Lobot.prototype = {
 		"chat-buddy-update"
 	],
 	
-	registerObservers: function() {
+	registerObservers: function(notifications) {
 		let observerService = Components.classes["@mozilla.org/observer-service;1"]
 									 .getService(Components.interfaces.nsIObserverService);
 
 		let self = this;
-		self.globalNotifications.forEach(function (aTopic) {
+		notifications.forEach(function (aTopic) {
 			observerService.addObserver(self, aTopic, false);
 		});
 	},
 	
 	// nsIObserver
 	observe: function(aSubject, aTopic, aMsg) {
-		//alert(aTopic);
+		dump(aTopic);
 		switch (aTopic) {
 			case "account-added":
 			case "account-updated":
@@ -120,16 +120,14 @@ Lobot.prototype = {
 				// Do nothing
 				break;
 			case "new-conversation":
-				let self = this;
-				let notifications = self.purpleIConversationNotifications.concat(
-					aSubject.isChat ? self.purpleIConvChatNotifications : self.purpleIConvIMNotifications
-				);
-				/*notifications.forEach(function (aTopic) {
-					obsSvc.addObserver(self, aTopic, false);
-				});*/
+				// Register ourself to see stuff about each new chat
+				/*this.registerObservers(this.purpleIConversationNotifications.concat(
+					aSubject.QueryInterface(Ci.purpleIConversation).isChat ? this.purpleIConvChatNotifications : this.purpleIConvIMNotifications
+				));*/
 				break;
 			case "new-text":
-				this.receivedMessage(aSubject);
+				if (aSubject.incoming || true) // Ignore everything we said // XXX
+					this.receivedMessage(aSubject);
 				break;
 			case "buddy-added":
 			case "buddy-signed-on":
@@ -148,15 +146,19 @@ Lobot.prototype = {
 	},
 	
 	receivedMessage: function(aMessage) {
-		//if (!aMessage.containsNick && !aMessage.system)
-		dump(this.decodeHTMLEntities(aMessage));
+		let action;
+		if (aMessage.system || aMessage.notification || aMessage.error) { // XXX include autoResponse?
+		} else if (!aMessage.containsNick) // XXX should be aMessage.containsNick
+			action = "told";
+		else
+			action = "heard";
+		if (action) {
 			let aConversation = aMessage.conversation.QueryInterface(Ci.purpleIConversation);
 			this.told(aMessage,
 					  aConversation.isChat ? this.getBuddyFromConversation(aConversation, aMessage.who) : aConversation.QueryInterface(Ci.purpleIConvIM).buddy,
 					  aConversation,
 					  aConversation.account);
-		//else if (!aSubject.system)
-		//	this.heard(aMessage.conversation.account, aMessage.conversation, aMessage);
+		}
 	},
 
 	/*
@@ -267,12 +269,35 @@ Lobot.prototype = {
 	},
 	
 	// Automatically choose who to talk to based on whether a user/conversation exists or not
+	// XXX check message length so we don't send empty stuff
 	say: function(aMessage, aBuddy, aConversation, aAccount, dontAutoMsg) {
 		dump([aMessage, aBuddy, aConversation, aAccount].join("\n"));
-		//if (aBuddy && !aConversation) // aBuddy is 
-		//	aConversation = aAccountBuddy.createConversation();
-		// For chats: aAccount.createConversation(aBuddy.name); // aBuddy is purpleIConvChatBuddy
-		aConversation.sendMsg(aMessage);
+
+		//aConversation.sendMsg(aMessage);
+
+		if (aBuddy && message.length > this.self['maxInConversation'] && aConversation.isChat) {
+			let aAccountConversation = aConversation.isChat ? aAccount.createConversation(aBuddy.name) : aBuddy.createConversation();
+			if (!dontAutoMsg) // Send the user the full message
+				aAccountBuddy.createConversation().sendMsg(aMessage);
+			aMessage = aMessage.substr(0, this.self['maxInConversation']);
+			if (!dontAutoMsg)
+				message += '... (rest /msged)';
+			else
+				message += '... (there is more; ask me in a /msg)';
+		}
+		
+		if (aBuddy && aConversation.isChat)
+			aConversation.sendMsg(aBuddy.name + ": " + aMessage);
+		else // If a private IM only this occurs
+			aConversation.sendMsg(aMessage);
+	},
+	
+	emote: function(aEmote, aBuddy, aConversation, aAccount) {
+		// XXX should send /me what
+		if (aBuddy)
+			aConversation.sendMsg(aEmote + " " + aBuddy.name);
+		else
+			aConversation.sendMsg(aEmote);
 	},
 	
 	shutdown: function() {
@@ -285,39 +310,4 @@ Lobot.prototype = {
 			if (buddy.name.toLowerCase() == aNick.toLowerCase())
 				return buddy;
 	}
-}
-
-function Conversation(self, name) {
-	this.users = [];
-	this.join();
-	this.name = name;
-
-	this.self = self;
-};
-Conversation.prototype = {
-	say: function(message, user, dontAutoMsg) { // XXX check message length so we don't send empty stuff
-		if (user && message.length > this.self['maxInConversation']) {
-			if (!dontAutoMsg) // Send the user the full message
-				user.say(message);
-			message = message.substr(0, this.self['maxInConversation']);
-			if (!dontAutoMsg)
-				message += '... (rest /msged)';
-			else
-				message += '... (there is more; ask me in a /msg)';
-		}
-		
-		if (user)
-			this.self.dump(this.name + " << <u>" + user.name + ": " + message + "</u>");
-		else
-			this.self.dump(this.name + " << <u>" + message + "</u>");
-	},
-	emote: function(what, user) {
-		// XXX should send /me what
-		if (user)
-			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + " " + user.name + "</u> ***");
-		else
-			this.self.dump(this.name + " *** <u>" + this.self.name + " " + what + "</u> ***");
-	},
-
-	join: function() {}
 }

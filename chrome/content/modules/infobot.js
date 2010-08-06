@@ -110,7 +110,7 @@ var infobot = {
 		// JavaScript port of infobot.bm
 		told: function(self, aMessage, aBuddy, aConversation, aAccount) {
 			let matches;
-			let message = aMessage.originalMessage;
+			let message = self.decodeHTMLEntities(aMessage.originalMessage);
 
 			if ((matches = (new XRegExp("^\\s*status[?\\s]*$", "si").exec(message)))) {
 				var sum = this.countFactoids(self);
@@ -154,7 +154,7 @@ var infobot = {
 
 		doFactoidCheck: function(self, aMessage, aBuddy, aConversation, aAccount, direct, baffled) {
 			let matches, shortMessage;
-			let message = aMessage.originalMessage;
+			let message = self.decodeHTMLEntities(aMessage.originalMessage);
 			if (matches = (new XRegExp(
 					"^\\s* (?:\\w+[:.!\\s]+\\s+)?\
 					(?:(?:well|and|or|yes|[uh]+m*|o+[oh]*[k]+(?:a+y+)?|still|well|so|a+h+|o+h+)[:,.!?\\s]+|)*\

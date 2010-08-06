@@ -45,4 +45,4 @@ function dump(aMessage) {
 //var lobot = new Lobot([helloWorld]); // Initialize
 var lobot = new Lobot([helloWorld, decodeHTMLEntities, infobot]); // Initialize
 
-this.addEventListener("load", function() { lobot.registerObservers(); }, false);
+this.addEventListener("load", function() { lobot.registerObservers(lobot.globalNotifications); }, false);
